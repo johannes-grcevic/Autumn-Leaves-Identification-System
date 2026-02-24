@@ -1,0 +1,66 @@
+package model;
+
+public class UnionFind {
+    private final int[] parent;
+    private final int[] rank;
+    private int count;
+
+    public UnionFind(int size) {
+        parent = new int[size];
+        rank = new int[size];
+        count = size;
+
+        // Initializes with each element as its own representative (its own disjoint set)
+        for (int i = 0; i < parent.length; i++) {
+            parent[i] = i;
+            rank[i] = 0;  // tree height initially 0
+        }
+    }
+
+    // find with Path Compression
+    public int find(int p) {
+        while (parent[p] != p) {
+            parent[p] = parent[parent[p]]; // path compression
+            p = parent[p];
+        }
+        return parent[p];
+    }
+
+    // Implements Union by rank (height)
+    public void union(int p, int q) {
+        int rootP = find(p);
+        int rootQ = find(q);
+
+        //rootP & rootQ are already in the same set
+        if (rootP == rootQ) {
+            return;
+        }
+
+        // If rootP’s rank is less than rootQ’s rank
+        if (rank[rootP] < rank[rootQ]) {
+            // Then move rootP under rootQ
+            parent[rootP] = rootQ;
+            // If rootP’s rank is larger than rootQ’s rank
+        } else if (rank[rootP] > rank[rootQ]) {
+            // Then move rootQ under rootP
+            parent[rootQ] = rootP;
+            // if the ranks are the same
+        } else {
+            // Otherwise move rootP under rootQ
+            parent[rootP] = rootQ;
+            rank[rootQ]++; // increase rank if same height
+        }
+
+        count--; // decrease as two sets are merged into one
+    }
+
+    // Check if two elements are connected (in the same set)
+    public boolean connected(int p, int q) {
+        return find(p) == find(q);
+    }
+
+    // number of connected components
+    public int count() {
+        return count;
+    }
+}
