@@ -123,10 +123,10 @@ public class IdentificationSystemController implements Initializable {
 
         // draw cluster boundary rectangles
         ClusterBoundsController controller = new ClusterBoundsController();
-        Pane drawPane = controller.drawBounds(resizedImage, Color.BLACK, Color.BLUE, clusterController);
+        Pane drawPane = controller.drawBounds(resizedImage, Color.BLACK, Color.BLUE, null, clusterController);
 
         Stage stage = FXUtils.showPopupWindow("Clusters", drawPane, drawPane.getPrefWidth(), drawPane.getPrefHeight(), false);
-        controller.setKeyListener(stage.getScene());
+        controller.setTargetScene(stage.getScene());
 
         // update status text
         setStatusBar("Leaf/Cluster Count: " + clusterController.getClusterCount(), true);

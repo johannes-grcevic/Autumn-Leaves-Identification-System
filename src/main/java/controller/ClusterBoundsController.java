@@ -6,14 +6,20 @@ import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
 public class ClusterBoundsController {
     private Pane drawPane;
+    private Scene targetScene;
 
-    public Pane drawBounds(Image source, Color textFillColor, Color strokeColor, ClusterController controller) {
+    public Pane drawBounds(Image source, Color textFillColor, Color strokeColor, Scene target, ClusterController controller) {
+        if (targetScene == null) {
+            setTargetScene(target);
+        }
+
         if (controller == null) {
             throw new IllegalArgumentException("ClusterController cannot be null!");
         }
@@ -66,15 +72,31 @@ public class ClusterBoundsController {
         return drawPane;
     }
 
-    public void setKeyListener(Scene scene) {
-        scene.setOnKeyPressed(event -> {
-            if (event.isShiftDown() && event.getCode() == KeyCode.N) {
-                for (Node node : drawPane.getChildren()) {
-                    if (node instanceof Label) {
-                        node.setVisible(!node.isVisible());
-                    }
+    public void setTargetScene(Scene target) {
+        targetScene = target;
+
+        // trigger scene changed event
+        if (target != null) {
+            onTargetSceneChanged(target);
+        }
+    }
+
+    public Scene getTargetScene() {
+        return targetScene;
+    }
+
+    // Events
+    private void onTargetSceneChanged(Scene scene) {
+        scene.setOnKeyPressed(this::onKeyPressed);
+    }
+
+    private void onKeyPressed(KeyEvent event) {
+        if (event.getCode() == KeyCode.N) {
+            for (Node node : drawPane.getChildren()) {
+                if (node instanceof Label) {
+                    node.setVisible(!node.isVisible());
                 }
             }
-        });
+        }
     }
 }
