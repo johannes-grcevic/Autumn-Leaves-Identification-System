@@ -38,20 +38,24 @@ public class UnionFind {
 
         // If rootP’s rank is less than rootQ’s rank
         if (rank[rootP] < rank[rootQ]) {
-            // Then move rootP under rootQ
+            // then move rootP under rootQ
             parent[rootP] = rootQ;
             // If rootP’s rank is larger than rootQ’s rank
         } else if (rank[rootP] > rank[rootQ]) {
-            // Then move rootQ under rootP
+            // then move rootQ under rootP
             parent[rootQ] = rootP;
-            // if the ranks are the same
+            // if they are the same height
         } else {
-            // Otherwise move rootP under rootQ
+            // move rootP under rootQ
             parent[rootP] = rootQ;
             rank[rootQ]++; // increase rank if same height
         }
 
-        count--; // decrease as two sets are merged into one
+        count--; // decrease by one as two sets are merged
+    }
+
+    public int[] getParent() {
+        return parent;
     }
 
     // Check if two elements are connected (in the same set)

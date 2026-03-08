@@ -20,25 +20,26 @@
               <menus>
                 <Menu mnemonicParsing="false" text="File">
                   <items>
-                    <MenuItem mnemonicParsing="false" onAction="#openFile" text="Open..." />
+                    <MenuItem mnemonicParsing="false" onAction="#openImageFile" text="Open..." />
                         <SeparatorMenuItem mnemonicParsing="false" />
                         <MenuItem mnemonicParsing="false" onAction="#quitApplication" text="Quit" />
                   </items>
                 </Menu>
                 <Menu mnemonicParsing="false" text="Edit">
                   <items>
-                    <MenuItem mnemonicParsing="false" onAction="#deleteFile" text="Delete" />
+                    <MenuItem mnemonicParsing="false" onAction="#clearImage" text="Clear Image" />
                   </items>
                 </Menu>
                   <Menu mnemonicParsing="false" text="View">
                      <items>
-                        <MenuItem mnemonicParsing="false" onAction="#displayClusters" text="Show Clusters" />
-                        <MenuItem mnemonicParsing="false" onAction="#convertBlackAndWhite" text="Show Black &amp; White" />
+                        <MenuItem mnemonicParsing="false" onAction="#showNodes" text="Show Bounds" />
+                        <MenuItem mnemonicParsing="false" onAction="#showBlackAndWhite" text="Show Black &amp; White" />
+                        <MenuItem mnemonicParsing="false" onAction="#showRandomColors" text="Show Random Colors" />
                      </items>
                   </Menu>
                 <Menu mnemonicParsing="false" text="Help">
                   <items>
-                    <MenuItem mnemonicParsing="false" onAction="#openAboutPage" text="About" />
+                    <MenuItem mnemonicParsing="false" onAction="#browseAboutPage" text="About" />
                   </items>
                 </Menu>
               </menus>
@@ -64,14 +65,14 @@
    <left>
       <AnchorPane prefHeight="400.0" prefWidth="208.0" BorderPane.alignment="CENTER_LEFT">
          <children>
-            <Button layoutX="104.0" layoutY="54.0" mnemonicParsing="false" onAction="#autoSelectColors" text="Auto Select" />
+            <Button fx:id="autoSelectColorsButton" layoutX="104.0" layoutY="54.0" mnemonicParsing="false" onAction="#autoSelectColors" text="Auto Select" />
             <ColorPicker fx:id="colorPicker" layoutX="5.0" layoutY="22.0" prefHeight="25.0" prefWidth="190.0" />
             <Label layoutX="6.0" prefHeight="19.0" prefWidth="160.0" text="Colour Selection">
                <font>
                   <Font name="System Bold" size="13.0" />
                </font>
             </Label>
-            <Button layoutX="19.0" layoutY="54.0" mnemonicParsing="false" onAction="#clearColorPicker" text="Remove All" />
+            <Button layoutX="19.0" layoutY="54.0" mnemonicParsing="false" onAction="#clearColorPicker" prefHeight="25.0" prefWidth="73.0" text="Clear All" />
          </children></AnchorPane>
    </left>
    <bottom>

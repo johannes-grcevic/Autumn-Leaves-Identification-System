@@ -3,18 +3,6 @@ package util;
 import java.util.Comparator;
 
 public class ArrayUtils {
-    public static void fill(int[] array, int value) {
-        for (int i = 0; i < array.length; i++) {
-            array[i] = value;
-        }
-    }
-
-    public static <T> void fill(T[] array, T value) {
-        for (int i = 0; i < array.length; i++) {
-            array[i] = value;
-        }
-    }
-
     /**
      * Sorts an array of ints using the Insertion sort algorithm.
      */

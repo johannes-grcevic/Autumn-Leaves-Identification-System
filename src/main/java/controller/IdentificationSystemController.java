@@ -2,8 +2,9 @@ package controller;
 
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 
+import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 
@@ -14,19 +15,22 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Label;
 import javafx.scene.image.*;
 import javafx.scene.image.Image;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 
 import javafx.stage.Stage;
+import model.PixelNode;
+import util.ColorUtils;
 import util.FXUtils;
+import util.ImageUtils;
 
 import java.io.File;
 import java.net.URI;
 import java.net.URL;
 
-import java.util.Collections;
-import java.util.ResourceBundle;
+import java.util.*;
 
 import static util.FXUtils.showAlert;
 
@@ -39,16 +43,35 @@ public class IdentificationSystemController implements Initializable {
     private ColorPicker colorPicker;
     @FXML
     private Label statusLabel;
+    @FXML
+    private Button autoSelectColorsButton;
 
-    private final Tooltip clusterTooltip = new Tooltip();
+    private Pane centerPane;
+    private final Tooltip nodeTooltip = new Tooltip();
 
     private File imageFile;
     private Image resizedImage;
+    private WritableImage blackAndWhiteImage;
 
-    private ClusterController clusterController;
+    private BorderStroke imageBorderStroke;
+
+    private NodeController nodeController;
+
+    private final int MIN_NODE_SIZE;
+    private final int MAX_CUSTOM_COLORS;
+
+    private final String GITHUB_URL;
+    private final String ALERT_NO_IMAGE_LOADED = "No Image Loaded!";
+    private final String ALERT_NO_COLORS_SELECTED = "No Colors Selected!";
+
+    public IdentificationSystemController() {
+        MIN_NODE_SIZE = 55;
+        MAX_CUSTOM_COLORS = 120;
+        GITHUB_URL = "https://github.com/JohannesGrcevic/Autumn-Leaves-Identification-System";
+    }
 
     @FXML
-    private void openFile() {
+    private void openImageFile() {
         FileChooser fileChooser = new FileChooser();
         FileChooser.ExtensionFilter imageFilter =
                 new FileChooser.ExtensionFilter(
@@ -61,156 +84,158 @@ public class IdentificationSystemController implements Initializable {
                 );
 
         fileChooser.getExtensionFilters().add(imageFilter);
+        fileChooser.setTitle("Open Image");
+
         File file = fileChooser.showOpenDialog(borderPane.getScene().getWindow());
 
         if (file != null && file.exists() && file.isFile()) {
             imageFile = file;
-        }
 
-        if (!isImageFileLoaded()) return;
-
-        AnchorPane centerAnchorPane = (AnchorPane)borderPane.getCenter();
-        resizedImage = new Image(String.valueOf(imageFile.toURI()), centerAnchorPane.getWidth(), centerAnchorPane.getHeight(), false, false);
-        imageView.setImage(resizedImage);
-
-        createClusters();
-    }
-
-    @FXML
-    private void convertBlackAndWhite() {
-        if (!isImageFileLoaded()) {
-            showAlert("No image loaded!", AlertType.ERROR);
-            return;
-        }
-
-        if (!hasSelectedColors()) {
-            if (!showAlert("No colours selected! Select them automatically?", AlertType.CONFIRMATION).equals(ButtonType.OK)) {
-                return;
-            }
-            else {
-                autoSelectColors();
-            }
-        }
-
-        try {
-            WritableImage blackAndWhiteImage = getBlackAndWhiteImage(resizedImage);
-
-            Pane pane = new Pane(new ImageView(blackAndWhiteImage));
-            pane.setPrefSize(resizedImage.getWidth(), resizedImage.getHeight());
-            FXUtils.showPopupWindow("Black and White Image", pane, pane.getPrefWidth(), pane.getPrefHeight(), false);
-
-        } catch (Exception e) {
-            System.err.print("Error converting to black and white: " + e);
+            // resize the image to fit the center pane
+            resizedImage = new Image(String.valueOf(imageFile.toURI()), centerPane.getWidth(), centerPane.getHeight(), false, false);
+            imageView.setImage(resizedImage);
         }
     }
 
     @FXML
-    private void displayClusters() {
+    private void showBlackAndWhite() {
         if (!isImageFileLoaded()) {
-            showAlert("No image loaded!", AlertType.ERROR);
+            showAlert(ALERT_NO_IMAGE_LOADED, AlertType.ERROR);
             return;
         }
 
-        // ask to auto-select colours if none are selected
-        if (!hasSelectedColors()) {
-            if (!showAlert("No colours selected! Select them automatically?", AlertType.CONFIRMATION).equals(ButtonType.OK)) {
-                return;
-            }
-            else {
-                autoSelectColors();
+        if (!hasCustomColorsSelected(colorPicker)) {
+            showAlert(ALERT_NO_COLORS_SELECTED, AlertType.ERROR);
+            return;
+        }
+
+        int width = (int) blackAndWhiteImage.getWidth();
+        int height = (int) blackAndWhiteImage.getHeight();
+
+        Pane pane = new Pane(new ImageView(blackAndWhiteImage));
+        pane.setPrefSize(width, height);
+        FXUtils.showPopupWindow("Black and White", pane, pane.getPrefWidth(), pane.getPrefHeight(), false);
+    }
+
+    @FXML
+    private void showRandomColors() {
+        if (!isImageFileLoaded()) {
+            showAlert(ALERT_NO_IMAGE_LOADED, AlertType.ERROR);
+            return;
+        }
+
+        if (!hasCustomColorsSelected(colorPicker)) {
+            showAlert(ALERT_NO_COLORS_SELECTED, AlertType.ERROR);
+            return;
+        }
+
+        Random rand = new Random();
+        WritableImage coloredImage = new WritableImage(
+                blackAndWhiteImage.getPixelReader(),
+                (int) blackAndWhiteImage.getWidth(),
+                (int) blackAndWhiteImage.getHeight()
+        );
+
+        int width = (int) coloredImage.getWidth();
+        int height = (int) coloredImage.getHeight();
+        PixelWriter writer = coloredImage.getPixelWriter();
+        boolean[] coloredNodes = new boolean[width * height];
+
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                int index = y * width + x;
+                int rootNode = nodeController.getNodeRoot(index);
+
+                if (!nodeController.isValidNode(rootNode) || coloredNodes[rootNode]) {
+                    continue;
+                }
+
+                PixelNode node = nodeController.getNode(width, height, x, y);
+                Color randomColor = ColorUtils.getRandomColor(rand);
+
+                for (Integer pixel : node.pixels()) {
+                    int pixelX = pixel % width;
+                    int pixelY = pixel / width;
+                    writer.setColor(pixelX, pixelY, randomColor);
+                }
+
+                coloredNodes[rootNode] = true;
             }
         }
 
-        // draw cluster boundary rectangles
-        ClusterBoundsController controller = new ClusterBoundsController();
-        Pane drawPane = controller.drawBounds(resizedImage, Color.BLACK, Color.BLUE, null, clusterController);
+        Pane pane = new Pane(new ImageView(coloredImage));
+        pane.setPrefSize(width, height);
+        FXUtils.showPopupWindow("Random Colors", pane, pane.getPrefWidth(), pane.getPrefHeight(), false);
+    }
 
-        Stage stage = FXUtils.showPopupWindow("Clusters", drawPane, drawPane.getPrefWidth(), drawPane.getPrefHeight(), false);
+    @FXML
+    private void showNodes() {
+        if (!isImageFileLoaded()) {
+            showAlert(ALERT_NO_IMAGE_LOADED, AlertType.ERROR);
+            return;
+        }
+
+        if (!hasCustomColorsSelected(colorPicker)) {
+            showAlert(ALERT_NO_COLORS_SELECTED, AlertType.ERROR);
+            return;
+        }
+
+        // draw node boundary rectangles
+        NodeBoundsController controller = new NodeBoundsController(blackAndWhiteImage.getWidth(), blackAndWhiteImage.getHeight(), nodeController);
+        Pane nodeBoundsPane = controller.drawNodeBounds(resizedImage, Color.BLACK, Color.BLUE, 2, null);
+
+        // display the node popup window
+        Stage stage = FXUtils.showPopupWindow("Bounds | Press 'N' for numbering", nodeBoundsPane, nodeBoundsPane.getPrefWidth(), nodeBoundsPane.getPrefHeight(), false);
         controller.setTargetScene(stage.getScene());
 
-        // update status text
-        setStatusBar("Leaf/Cluster Count: " + clusterController.getClusterCount(), true);
-    }
-
-    @FXML
-    private void displayClusterTooltip(Node source, double screenX, double screenY) {
-        if (!isImageFileLoaded()) return;
-
-        Image blackAndWhiteImage = getBlackAndWhiteImage(resizedImage);
-
-        // get local mouse coordinates
-        Point2D screenLocalCoords = imageView.screenToLocal(screenX, screenY);
-
-        int[] clusterPixels = clusterController.getClusterPixels(blackAndWhiteImage, screenLocalCoords);
-        int clusterNumber = clusterController.getClusterNumber(blackAndWhiteImage, screenLocalCoords);
-
-        if (clusterPixels.length == 0 || clusterNumber <= 0) return;
-
-        clusterTooltip.setText("""
-                Leaf/Cluster Number: %d
-                Estimated Size (pixel units): %d
-                """.formatted(clusterNumber, clusterPixels.length));
-
-        clusterTooltip.setHideOnEscape(true);
-        clusterTooltip.setAutoHide(true);
-        clusterTooltip.show(source, screenX, screenY);
+        // show the number of nodes on the status bar
+        setStatusBar("Leaf/Node Count: " + nodeController.getNodeCount(), true);
     }
 
     @FXML
     private void autoSelectColors() {
-        if (!isImageFileLoaded()) {
-            showAlert("No image loaded!", AlertType.ERROR);
-            return;
-        }
+        // clear the current color selection
+        clearColorPicker();
 
-        Image sourceImage = resizedImage;
-        int width = (int) sourceImage.getWidth();
-        int height = (int) sourceImage.getHeight();
-        PixelReader reader = sourceImage.getPixelReader();
+        // convert to a square image for faster processing
+        Image squareImage = new Image(String.valueOf(imageFile.toURI()), 512, 512, true, false);
 
-        int maxCustomColors = 108;
-        ObservableList<Color> customColors = colorPicker.getCustomColors();
+        int width = (int) squareImage.getWidth();
+        int height = (int) squareImage.getHeight();
+        PixelReader reader = squareImage.getPixelReader();
 
-        for (int i = 0; i < width; i++) {
-            for (int j = 0; j < height; j++) {
-                Color pixelColor = reader.getColor(i, j);
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                Color pixelColor = reader.getColor(x, y);
 
-                // ignore non-autumn leaves
-                if (!isAutumnLeaf(pixelColor) || customColors.contains(pixelColor)) {
-                    continue;
+                // add the color to the color picker if it is an autumn leaf
+                if (ImageUtils.isAutumnLeaf(pixelColor)) {
+                    addCustomColor(colorPicker, pixelColor);
                 }
-
-                // limit max custom colours to fit inside UI
-                if (customColors.size() >= maxCustomColors) break;
-
-                customColors.add(pixelColor);
             }
         }
-
-        setStatusBar("Found " + customColors.size() + " Relevant Colors" , true);
     }
 
     @FXML
     private void clearColorPicker() {
-        if (getSelectedColors().isEmpty()) return;
-
+        getCustomColors(colorPicker).clear();
         colorPicker.getCustomColors().clear();
         colorPicker.setValue(Color.WHITE);
     }
 
     @FXML
-    private void deleteFile() {
+    private void clearImage() {
         if (!isImageFileLoaded()) return;
-        if (!showAlert("Are you sure you want to delete the image?", AlertType.CONFIRMATION).equals(ButtonType.OK))
+        if (!showAlert("Are you sure you want to clear the current image?", AlertType.CONFIRMATION).equals(ButtonType.OK))
             return;
 
         imageFile = null;
         imageView.setImage(null);
+        nodeController = null;
 
-        setStatusBar("No Image Loaded", true);
-        setImageBorder(Color.BLACK, BorderStrokeStyle.DASHED, 3, 2);
+        setStatusBar(ALERT_NO_IMAGE_LOADED, true);
+        FXUtils.SetBorderStyle(centerPane, imageBorderStroke);
         clearColorPicker();
-        clusterController = null;
     }
 
     @FXML
@@ -224,113 +249,110 @@ public class IdentificationSystemController implements Initializable {
     }
 
     @FXML
-    private void openAboutPage() {
+    private void browseAboutPage() {
         try {
-            java.awt.Desktop.getDesktop().browse(URI.create("https://github.com/JohannesGrcevic/Autumn-Leaves-Identification-System"));
+            java.awt.Desktop.getDesktop().browse(URI.create(GITHUB_URL));
         } catch (Exception e) {
             System.err.print("Error opening about page: " + e);
         }
     }
 
-    // event listeners //
+    // Events //
 
-    private void OnImageChange(ObservableValue<? extends Image> observableValue, Image oldValue, Image newValue) {
+    protected void onImageChanged(ObservableValue<? extends Image> value, Image oldValue, Image newValue) {
         if (newValue != null && !newValue.isError()) {
             setStatusBar("Image: " + imageFile.getName(), true);
-            ((AnchorPane)borderPane.getCenter()).setBorder(null);
-            clearColorPicker();
-        }
-    }
 
-    private void OnColorSelectionChange(ObservableValue<? extends Color> observableValue, Color oldValue, Color newValue) {
-        // recompute clusters each time the colour selection changes
-        createClusters();
+            // hide the border after the image is loaded
+            centerPane.setBorder(null);
 
-        System.out.println("Cluster count: " + clusterController.getClusterCount());
-    }
-
-    // Utility methods //
-
-    private void createClusters() {
-        if (!hasSelectedColors()) {
+            // auto select colors if none are selected
             autoSelectColors();
+
+            createNodesFromImage(resizedImage);
         }
-
-        WritableImage blackAndWhiteImage = getBlackAndWhiteImage(resizedImage);
-        int width = (int) blackAndWhiteImage.getWidth();
-        int height = (int) blackAndWhiteImage.getHeight();
-
-        PixelReader reader = blackAndWhiteImage.getPixelReader();
-
-        // create clusters
-        if (clusterController != null) {
-            clusterController = null;
-        }
-
-        clusterController = new ClusterController(width, height);
-        clusterController.unionNeighboringPixels(width, height, reader, Color.BLACK);
     }
 
-    private WritableImage getBlackAndWhiteImage(Image source) {
-        int width = (int) source.getWidth();
-        int height = (int) source.getHeight();
+    protected void onColorSelectionChanged(ObservableValue<? extends Color> value, Color oldValue, Color newValue) {
+        if (!isImageFileLoaded()) return;
 
-        WritableImage writableImage = new WritableImage(width, height);
-        PixelReader reader = source.getPixelReader();
-        PixelWriter writer = writableImage.getPixelWriter();
-
-        for (int i = 0; i < width; i++) {
-            for (int j = 0; j < height; j++) {
-                Color pixelColor = reader.getColor(i, j);
-
-                if (isSelectedColor(pixelColor)) {
-                    writer.setColor(i, j, Color.WHITE);
-                }
-                else {
-                    writer.setColor(i, j, Color.BLACK);
-                }
-            }
-        }
-
-        return writableImage;
+        createNodesFromImage(resizedImage);
     }
 
-    private boolean isSelectedColor(Color pixelColor) {
-        double hue = pixelColor.getHue();
-        double saturation = pixelColor.getSaturation();
-        double brightness = pixelColor.getBrightness();
+    protected void onAutoSelectColorsButtonClicked(ActionEvent event) {
+        if (!isImageFileLoaded()) return;
 
-        for (Color selectedColor : getSelectedColors()) {
-            if (selectedColor.getHue() >= hue &&
-                    saturation > 0.3 &&
-                    brightness > 0.2) {
-                return true;
-            }
-        }
-
-        return false;
+        autoSelectColors();
+        createNodesFromImage(resizedImage);
     }
 
-    private boolean isAutumnLeaf(Color pixelColor) {
-        double hue = pixelColor.getHue();
-        double saturation = pixelColor.getSaturation();
-        double brightness = pixelColor.getBrightness();
+    protected void onImageViewMouseClicked(MouseEvent event) {
+        if (!isImageFileLoaded()) return;
 
-        // Detect brown/orange leaves
-        return hue >= 15 && hue <= 50 && // orange/brown range
-                saturation > 0.3 && // avoid gray areas
-                brightness > 0.2;
+        showNodeTooltip((Node) event.getSource(), event.getScreenX(), event.getScreenY(), true, true);
     }
 
-    private ObservableList<Color> getSelectedColors() {
-        ColorPicker picker = colorPicker;
+    // Initialization //
+    @Override
+    public void initialize(URL url, ResourceBundle resourceBundle) {
+        centerPane = (Pane) borderPane.getCenter();
 
-        if (!picker.getCustomColors().isEmpty() && picker.getValue().equals(Color.WHITE)) {
-            return picker.getCustomColors();
+        imageBorderStroke = new BorderStroke(Color.BLACK, BorderStrokeStyle.DASHED, new CornerRadii(3), new BorderWidths(2));
+        FXUtils.SetBorderStyle(centerPane, imageBorderStroke);
+
+        colorPicker.valueProperty().addListener(this::onColorSelectionChanged);
+        imageView.imageProperty().addListener(this::onImageChanged);
+
+        imageView.setOnMouseClicked(this::onImageViewMouseClicked);
+        autoSelectColorsButton.setOnAction(this::onAutoSelectColorsButtonClicked);
+    }
+
+    // Utility //
+
+    public void showNodeTooltip(Node owner, double screenX, double screenY, boolean autoHide, boolean autoHideOnEscape) {
+        // get local mouse coordinates
+        Point2D screenLocalCoords = imageView.screenToLocal(screenX, screenY);
+
+        int pixelCount = nodeController.getNodePixelCount(blackAndWhiteImage, screenLocalCoords);
+        int sequenceNumber = nodeController.getNodeSequenceNumber(blackAndWhiteImage, screenLocalCoords);
+
+        // hide the tooltip if no node is found (e.g., clicking on an area of grass)
+        if (pixelCount <= 0 || sequenceNumber < 0) {
+            nodeTooltip.hide();
+            return;
         }
-        else {
-            return FXCollections.observableList(Collections.singletonList(picker.getValue()));
+
+        nodeTooltip.setText("""
+                Leaf/Node Number: %d
+                Estimated Size (pixel units): %d
+                """.formatted(sequenceNumber, pixelCount));
+
+        nodeTooltip.setHideOnEscape(autoHideOnEscape);
+        nodeTooltip.setAutoHide(autoHide);
+        nodeTooltip.show(owner, screenX, screenY);
+    }
+
+    private void createNodesFromImage(Image source) {
+        WritableImage blackAndWhite = getBlackAndWhite(source, getCustomColors(colorPicker));
+        if (blackAndWhite == null) return;
+
+        int width = (int) blackAndWhite.getWidth();
+        int height = (int) blackAndWhite.getHeight();
+
+        PixelReader reader = blackAndWhite.getPixelReader();
+
+        // clear the previous node controller
+        if (nodeController != null) {
+            nodeController = null;
         }
+
+        // create nodes
+        nodeController = new NodeController(width, height, MIN_NODE_SIZE);
+        nodeController.unionNeighboringPixels(width, height, reader, Color.BLACK);
+    }
+
+    private WritableImage getBlackAndWhite(Image source, List<Color> identificationColors) {
+        return blackAndWhiteImage = ImageUtils.getColorSeparated(source, identificationColors, Color.WHITE);
     }
 
     private void setStatusBar(String message, boolean visible) {
@@ -338,35 +360,30 @@ public class IdentificationSystemController implements Initializable {
         statusLabel.setVisible(visible);
     }
 
-    private void setImageBorder(Color color, BorderStrokeStyle style, double cornerRadius, double width) {
-        BorderStroke stroke = new BorderStroke(
-                color,
-                style,
-                new CornerRadii(cornerRadius),
-                new BorderWidths(width)
-        );
-        ((AnchorPane)borderPane.getCenter()).setBorder(new Border(stroke));
+    private void addCustomColor(ColorPicker picker, Color color) {
+        List<Color> customColors = getCustomColors(picker);
+
+        // prevent the ui from going out of bounds
+        if (customColors.size() >= MAX_CUSTOM_COLORS) return;
+
+        if (!customColors.contains(color)) {
+            customColors.add(color);
+        }
     }
 
-    private boolean hasSelectedColors() {
-        return !getSelectedColors().isEmpty() && !getSelectedColors().getFirst().equals(Color.WHITE);
+    private List<Color> getCustomColors(ColorPicker picker) {
+        List<Color> singleColorList = FXCollections.observableArrayList(picker.getValue());
+
+        return picker.getValue().equals(Color.WHITE) ? picker.getCustomColors() : singleColorList;
+    }
+
+    private boolean hasCustomColorsSelected(ColorPicker picker) {
+        List<Color> customColors = getCustomColors(picker);
+
+        return !customColors.isEmpty() && !customColors.getFirst().equals(Color.WHITE);
     }
 
     private boolean isImageFileLoaded() {
         return imageFile != null;
-    }
-
-    @Override
-    public void initialize(URL url, ResourceBundle resourceBundle) {
-        colorPicker.setTooltip(new Tooltip("Select colors to be used for clustering"));
-
-        setImageBorder(Color.BLACK, BorderStrokeStyle.DASHED, 3, 2);
-        imageView.imageProperty().addListener(this::OnImageChange);
-        colorPicker.valueProperty().addListener(this::OnColorSelectionChange);
-
-        imageView.setOnMouseClicked(event -> {
-            Node node = (Node)event.getSource();
-            displayClusterTooltip(node, event.getScreenX(), event.getScreenY());
-        });
     }
 }
