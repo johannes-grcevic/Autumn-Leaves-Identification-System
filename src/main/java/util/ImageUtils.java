@@ -9,7 +9,7 @@ import javafx.scene.paint.Color;
 import java.util.List;
 
 public class ImageUtils {
-    public static WritableImage getColorSeparated(Image source, List<Color> identificationColors, Color separationColor) {
+    public static WritableImage getBlackAndWhite(Image source, List<Color> separateColors) {
         int width = (int) source.getWidth();
         int height = (int) source.getHeight();
 
@@ -22,8 +22,8 @@ public class ImageUtils {
 
                 Color pixelColor = reader.getColor(x, y);
 
-                if (isValidColor(pixelColor, identificationColors, 0.3, 0.2)) {
-                    writer.setColor(x, y, separationColor);
+                if (isValidColor(pixelColor, separateColors, 0.3, 0.2)) {
+                    writer.setColor(x, y, Color.WHITE);
                 }
                 else {
                     writer.setColor(x, y, Color.BLACK);

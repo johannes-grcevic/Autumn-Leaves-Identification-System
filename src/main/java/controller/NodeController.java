@@ -8,29 +8,28 @@ import javafx.scene.paint.Color;
 import model.PixelNode;
 import model.UnionFind;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * The node controller uses the union-find algorithm to group nodes of pixels.
  */
 public class NodeController {
-    // node pixel counts
+    // pixel nodes
+    private final PixelNode[] nodes;
+    // number of pixels in each node
     private final int[] pixelCounts;
-
-    // min number of pixels in a node
-    private int minPixelCount;
 
     // union-find data structure
     private final UnionFind uf;
 
-    public NodeController(int width, int height, int minNodeSize) {
-        int size = width * height;
-
-        setMinNodeSize(minNodeSize);
-
+    public NodeController(int size) {
+        nodes = new PixelNode[size];
         pixelCounts = new int[size];
         uf = new UnionFind(size);
     }
 
-    public void unionNeighboringPixels(int width, int height, PixelReader reader, Color excludeColor) {
+    protected void unionNeighboringPixels(int width, int height, PixelReader reader, Color excludeColor) {
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 if (reader.getColor(x, y).equals(excludeColor)) {
@@ -51,6 +50,27 @@ public class NodeController {
                 }
             }
         }
+    }
+
+    protected void countPixels(int width, int height, PixelReader reader, Color excludeColor) {
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                if (reader.getColor(x, y).equals(excludeColor)) {
+                    continue;
+                }
+
+                int index = y * width + x;
+                int rootNode = uf.find(index);
+
+                // count pixels in each node
+                pixelCounts[rootNode]++;
+            }
+        }
+    }
+
+    public void createNodes(int width, int height, int minSize, PixelReader reader, Color excludeColor) {
+        unionNeighboringPixels(width, height, reader, excludeColor);
+        countPixels(width, height, reader, excludeColor);
 
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
@@ -58,117 +78,78 @@ public class NodeController {
                     continue;
                 }
 
-                // flatten the tree
                 int index = y * width + x;
 
                 // find the parent of each node
                 int rootNode = uf.find(index);
 
-                // add the number of pixels in each node
-                pixelCounts[rootNode]++;
+                // initialize each node
+                if (nodes[rootNode] == null) {
+                    nodes[rootNode] = new PixelNode(rootNode, minSize, pixelCounts[rootNode]);
+                }
+
+                // add pixels to each node
+                nodes[rootNode].addPixel(index);
             }
         }
     }
 
-    public PixelNode getNode(int width, int height, int x, int y) {
-        if (!isValidPixel(width, height, x, y)) return null;
+    public PixelNode getNode(int x, int y, int width, int height) {
+        if ((x < 0 && y < 0) || (x > width && y > height)) return PixelNode.getEmpty();
 
         int index = y * width + x;
         int rootNode = uf.find(index);
-        int[] parent = uf.getParent();
 
-        PixelNode node = new PixelNode(rootNode, pixelCounts[rootNode]);
+        if (rootNode < 0) return PixelNode.getEmpty();
 
-        for (int i = 0; i < parent.length; i++) {
-            if (uf.find(i) == rootNode) {
-                node.addPixel(i);
-            }
-        }
+        PixelNode node = nodes[rootNode];
+
+        if (node == null || !node.isValid()) return PixelNode.getEmpty();
 
         return node;
     }
 
-    public int getNodePixelCount(int width, int height, int x, int y) {
-        if (!isValidPixel(width, height, x, y)) return -1;
-
-        int index = y * width + x;
-        int rootNode = uf.find(index);
-
-        if (!isValidNode(rootNode)) return -1;
-
-        return pixelCounts[rootNode];
-    }
-
-    public int getNodePixelCount(Image source, Point2D coordinates) {
+    public PixelNode getNode(Image source, Point2D coordinates) {
         int width = (int) source.getWidth();
         int height = (int) source.getHeight();
         int x = (int) coordinates.getX();
         int y = (int) coordinates.getY();
 
-        return getNodePixelCount(width, height, x, y);
+        return getNode(x, y, width, height);
     }
 
-    public int getNodeSequenceNumber(int width, int height, int x, int y) {
-        if (!isValidPixel(width, height, x, y)) return -1;
+    public List<PixelNode> getValidNodes() {
+        List<PixelNode> validNodes = new ArrayList<>();
 
-        int index = y * width + x;
-        int rootNode = uf.find(index);
-
-        int sequenceNumber = 0;
-        for (int i = 0; i < pixelCounts.length; i++) {
-            if (!isValidNode(i)) continue;
-
-            sequenceNumber++;
-            if (i == rootNode) return sequenceNumber;
+        for (PixelNode node : nodes) {
+            if (node != null && node.isValid()) {
+                validNodes.add(node);
+            }
         }
 
-        return -1;
+        return validNodes;
     }
 
-    public int getNodeSequenceNumber(Image source, Point2D coordinates) {
-        int width = (int) source.getWidth();
-        int height = (int) source.getHeight();
-        int x = (int) coordinates.getX();
-        int y = (int) coordinates.getY();
+    public int getNodeSequenceNumber(PixelNode node) {
+        if (node == null || !node.isValid()) return 0;
 
-        return getNodeSequenceNumber(width, height, x, y);
+        int sequenceNumber = 0;
+        for (int i = pixelCounts.length - 1; i >= 0; i--) {
+            if (pixelCounts[i] < node.getMinSize()) continue;
+
+            sequenceNumber++;
+            if (i == node.getRoot()) return sequenceNumber;
+        }
+
+        return 0;
     }
 
     public int getNodeCount() {
         int count = 0;
-
-        for (int i = 0; i < pixelCounts.length; i++) {
-            if (!isValidNode(i)) continue;
-
-            count++;
+        for (PixelNode node : nodes) {
+            if (node != null && node.isValid()) count++;
         }
 
         return count;
-    }
-
-    public int getNodeRoot(int width, int height, int x, int y) {
-        if (!isValidPixel(width, height, x, y)) return -1;
-
-        int index = y * width + x;
-
-        return uf.find(index);
-    }
-
-    public int getNodeRoot(int index) {
-        return uf.find(index);
-    }
-
-    public void setMinNodeSize(int pixelCount) {
-        if (pixelCount > 0) {
-            minPixelCount = pixelCount;
-        }
-    }
-
-    public boolean isValidNode(int root) {
-        return pixelCounts[root] >= minPixelCount; // setting a min pixel count reduces noise
-    }
-
-    public boolean isValidPixel(int width, int height, int x, int y) {
-        return (x >= 0 && y >= 0 && x < width && y < height);
     }
 }

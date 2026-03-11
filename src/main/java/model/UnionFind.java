@@ -54,10 +54,6 @@ public class UnionFind {
         count--; // decrease by one as two sets are merged
     }
 
-    public int[] getParent() {
-        return parent;
-    }
-
     // Check if two elements are connected (in the same set)
     public boolean connected(int p, int q) {
         return find(p) == find(q);

@@ -32,7 +32,7 @@
                 </Menu>
                   <Menu mnemonicParsing="false" text="View">
                      <items>
-                        <MenuItem mnemonicParsing="false" onAction="#showNodes" text="Show Bounds" />
+                        <MenuItem mnemonicParsing="false" onAction="#showNodeBounds" text="Show Bounds" />
                         <MenuItem mnemonicParsing="false" onAction="#showBlackAndWhite" text="Show Black &amp; White" />
                         <MenuItem mnemonicParsing="false" onAction="#showRandomColors" text="Show Random Colors" />
                      </items>
@@ -44,7 +44,7 @@
                 </Menu>
               </menus>
             </MenuBar>
-            <Label fx:id="statusLabel" alignment="CENTER" layoutX="333.0" layoutY="86.0" prefHeight="28.0" prefWidth="614.0" text="No Image Loaded" textAlignment="CENTER">
+            <Label fx:id="statusLabel" alignment="CENTER" layoutX="333.0" layoutY="86.0" prefHeight="28.0" prefWidth="614.0" text="No Image Loaded!" textAlignment="CENTER">
                <font>
                   <Font name="System Bold" size="19.0" />
                </font>
