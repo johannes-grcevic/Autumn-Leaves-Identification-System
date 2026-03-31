@@ -26,7 +26,7 @@ public class UnionFind {
         return parent[p];
     }
 
-    // Implements Union by rank (height)
+    // implements Union by rank (height)
     public void union(int p, int q) {
         int rootP = find(p);
         int rootQ = find(q);
@@ -36,11 +36,11 @@ public class UnionFind {
             return;
         }
 
-        // If rootP’s rank is less than rootQ’s rank
+        // if rootP’s rank is less than rootQ’s rank
         if (rank[rootP] < rank[rootQ]) {
             // then move rootP under rootQ
             parent[rootP] = rootQ;
-            // If rootP’s rank is larger than rootQ’s rank
+            // if rootP’s rank is larger than rootQ’s rank
         } else if (rank[rootP] > rank[rootQ]) {
             // then move rootQ under rootP
             parent[rootQ] = rootP;

@@ -14,6 +14,7 @@ public class Bounds implements Comparable<Bounds> {
     public Point2D getMin() {
         return min;
     }
+
     public Point2D getMax() {
         return max;
     }
@@ -61,11 +62,11 @@ public class Bounds implements Comparable<Bounds> {
 
     public Point2D getCenter(Point2D min, Point2D max) {
         // Create the min and max midpoints
-        Point2D minPoint = new Point2D(min.getX(), min.getY());
-        Point2D maxPoint = new Point2D(max.getX(), max.getY());
+        Point2D minPoint2D = new Point2D(min.getX(), min.getY());
+        Point2D maxPoint2D = new Point2D(max.getX(), max.getY());
 
         // Get the center point of both midpoints
-        return minPoint.midpoint(maxPoint);
+        return minPoint2D.midpoint(maxPoint2D);
     }
 
     public Point2D getCenter() {
@@ -73,7 +74,7 @@ public class Bounds implements Comparable<Bounds> {
     }
 
     public int size() {
-        return (int) (max.distance(min));
+        return (int) Math.sqrt(max.distance(min));
     }
 
     @Override

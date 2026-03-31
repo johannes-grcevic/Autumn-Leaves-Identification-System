@@ -9,7 +9,7 @@ import javafx.scene.paint.Color;
 import java.util.List;
 
 public class ImageUtils {
-    public static WritableImage getBlackAndWhite(Image source, List<Color> separateColors) {
+    public static WritableImage getBlackAndWhite(Image source, List<Color> compareColors, double saturationThreshold, double brightnessThreshold) {
         int width = (int) source.getWidth();
         int height = (int) source.getHeight();
 
@@ -22,7 +22,7 @@ public class ImageUtils {
 
                 Color pixelColor = reader.getColor(x, y);
 
-                if (isValidColor(pixelColor, separateColors, 0.3, 0.2)) {
+                if (isValidColor(pixelColor, compareColors, saturationThreshold, brightnessThreshold)) {
                     writer.setColor(x, y, Color.WHITE);
                 }
                 else {

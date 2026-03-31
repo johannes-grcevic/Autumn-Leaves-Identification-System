@@ -8,6 +8,7 @@ import javafx.stage.Stage;
 
 import java.awt.*;
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * JavaFX Autumn Leaves Identification/Vision System
@@ -16,11 +17,8 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        double scaledWidth = screenSize.getWidth() * 0.85;
-        double scaledHeight = screenSize.getHeight() * 0.85;
-
         Scene scene = new Scene(loadFXML("identification-system"), 1280, 720);
+        scene.getStylesheets().add(Objects.requireNonNull(App.class.getResource("style.css")).toExternalForm());
         stage.setTitle("Autumn Leaves Identification System");
         stage.setResizable(false);
         stage.setScene(scene);

@@ -35,13 +35,9 @@
                         <MenuItem mnemonicParsing="false" onAction="#showNodeBounds" text="Show Bounds" />
                         <MenuItem mnemonicParsing="false" onAction="#showBlackAndWhite" text="Show Black &amp; White" />
                         <MenuItem mnemonicParsing="false" onAction="#showRandomColors" text="Show Random Colors" />
+                        <MenuItem mnemonicParsing="false" onAction="#showAnimatedConnectingPath" text="Show Path" />
                      </items>
                   </Menu>
-                <Menu mnemonicParsing="false" text="Help">
-                  <items>
-                    <MenuItem mnemonicParsing="false" onAction="#browseAboutPage" text="About" />
-                  </items>
-                </Menu>
               </menus>
             </MenuBar>
             <Label fx:id="statusLabel" alignment="CENTER" layoutX="333.0" layoutY="86.0" prefHeight="28.0" prefWidth="614.0" text="No Image Loaded!" textAlignment="CENTER">
@@ -72,7 +68,7 @@
                   <Font name="System Bold" size="13.0" />
                </font>
             </Label>
-            <Button layoutX="19.0" layoutY="54.0" mnemonicParsing="false" onAction="#clearColorPicker" prefHeight="25.0" prefWidth="73.0" text="Clear All" />
+            <Button layoutX="19.0" layoutY="54.0" mnemonicParsing="false" onAction="#clearColorSelection" prefHeight="25.0" prefWidth="73.0" text="Clear All" />
          </children></AnchorPane>
    </left>
    <bottom>

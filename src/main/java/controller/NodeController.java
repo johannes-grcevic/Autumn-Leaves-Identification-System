@@ -7,8 +7,10 @@ import javafx.scene.paint.Color;
 
 import model.PixelNode;
 import model.UnionFind;
+import util.ArrayUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -33,18 +35,18 @@ public class NodeController {
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 if (reader.getColor(x, y).equals(excludeColor)) {
-                    continue; // ignore excluded pixels
+                    continue; // ignore excluded pixels (black pixels)
                 }
 
                 // flatten the tree
                 int index = y * width + x;
 
-                // unionize right neighbor
+                // join right neighbor
                 if (x + 1 < width && !reader.getColor(x + 1, y).equals(excludeColor)) {
                     uf.union(index, y * width + (x + 1));
                 }
 
-                // unionize down neighbor
+                // join down neighbor
                 if (y + 1 < height && !reader.getColor(x, y + 1).equals(excludeColor)) {
                     uf.union(index, (y + 1) * width + x);
                 }
@@ -85,7 +87,7 @@ public class NodeController {
 
                 // initialize each node
                 if (nodes[rootNode] == null) {
-                    nodes[rootNode] = new PixelNode(rootNode, minSize, pixelCounts[rootNode]);
+                    nodes[rootNode] = new PixelNode(rootNode, minSize, pixelCounts[rootNode], width);
                 }
 
                 // add pixels to each node
@@ -118,7 +120,7 @@ public class NodeController {
         return getNode(x, y, width, height);
     }
 
-    public List<PixelNode> getValidNodes() {
+    public PixelNode[] getValidNodes() {
         List<PixelNode> validNodes = new ArrayList<>();
 
         for (PixelNode node : nodes) {
@@ -127,7 +129,7 @@ public class NodeController {
             }
         }
 
-        return validNodes;
+        return validNodes.toArray(new PixelNode[0]);
     }
 
     public int getNodeSequenceNumber(PixelNode node) {
