@@ -187,7 +187,7 @@ public class IdentificationSystemController implements Initializable {
         stage.getScene().getStylesheets().add(Objects.requireNonNull(App.class.getResource("style.css")).toExternalForm());
 
         // show the number of nodes on the status bar
-        setStatusBar("Leaf Count: " + nodeController.getNodeCount(), true);
+        setStatusBar("Leaf Count: " + nodeController.getValidNodeCount(), true);
     }
 
     @FXML
@@ -231,7 +231,7 @@ public class IdentificationSystemController implements Initializable {
         clearNodeSelection();
 
         // show the number of nodes on the status bar
-        setStatusBar("Leaf Count: " + nodeController.getNodeCount(), true);
+        setStatusBar("Leaf Count: " + nodeController.getValidNodeCount(), true);
     }
 
     @FXML

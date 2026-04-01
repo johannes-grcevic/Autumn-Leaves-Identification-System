@@ -10,7 +10,7 @@ public class UnionFind {
         rank = new int[size];
         count = size;
 
-        // Initializes with each element as its own representative (its own disjoint set)
+        // initializes with each element as its own representative (its own disjoint set)
         for (int i = 0; i < parent.length; i++) {
             parent[i] = i;
             rank[i] = 0;  // tree height initially 0
@@ -19,10 +19,8 @@ public class UnionFind {
 
     // find with Path Compression
     public int find(int p) {
-        while (parent[p] != p) {
-            parent[p] = parent[parent[p]]; // path compression
-            p = parent[p];
-        }
+        if (parent[p] != p)
+            parent[p] = find(parent[p]); // point directly to root
         return parent[p];
     }
 
@@ -31,16 +29,16 @@ public class UnionFind {
         int rootP = find(p);
         int rootQ = find(q);
 
-        //rootP & rootQ are already in the same set
+        //rootP and rootQ are already in the same set
         if (rootP == rootQ) {
             return;
         }
 
-        // if rootP’s rank is less than rootQ’s rank
+        // if rootP's rank is lower than rootQ's rank
         if (rank[rootP] < rank[rootQ]) {
             // then move rootP under rootQ
             parent[rootP] = rootQ;
-            // if rootP’s rank is larger than rootQ’s rank
+            // if rootP's rank is larger than rootQ's rank
         } else if (rank[rootP] > rank[rootQ]) {
             // then move rootQ under rootP
             parent[rootQ] = rootP;

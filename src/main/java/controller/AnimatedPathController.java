@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AnimatedPathController {
-    // path to animate
+    // path to animate along
     private final Path path;
     // nearest neighbor algorithm
     private final NearestNeighbor nn;

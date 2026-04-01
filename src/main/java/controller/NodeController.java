@@ -7,17 +7,15 @@ import javafx.scene.paint.Color;
 
 import model.PixelNode;
 import model.UnionFind;
-import util.ArrayUtils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
  * The node controller uses the union-find algorithm to group nodes of pixels.
  */
 public class NodeController {
-    // pixel nodes
+    // nodes containing pixels
     private final PixelNode[] nodes;
     // number of pixels in each node
     private final int[] pixelCounts;
@@ -38,7 +36,7 @@ public class NodeController {
                     continue; // ignore excluded pixels (black pixels)
                 }
 
-                // flatten the tree
+                // convert 2D (x, y) coordinates to 1D array index
                 int index = y * width + x;
 
                 // join right neighbor
@@ -132,6 +130,15 @@ public class NodeController {
         return validNodes.toArray(new PixelNode[0]);
     }
 
+    public int getValidNodeCount() {
+        int count = 0;
+        for (PixelNode node : nodes) {
+            if (node != null && node.isValid()) count++;
+        }
+
+        return count;
+    }
+
     public int getNodeSequenceNumber(PixelNode node) {
         if (node == null || !node.isValid()) return 0;
 
@@ -144,14 +151,5 @@ public class NodeController {
         }
 
         return 0;
-    }
-
-    public int getNodeCount() {
-        int count = 0;
-        for (PixelNode node : nodes) {
-            if (node != null && node.isValid()) count++;
-        }
-
-        return count;
     }
 }
