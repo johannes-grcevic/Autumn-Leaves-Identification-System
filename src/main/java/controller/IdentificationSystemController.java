@@ -296,8 +296,8 @@ public class IdentificationSystemController implements Initializable {
         if (!isImageFileLoaded()) return;
 
         if (event.getButton() == MouseButton.PRIMARY) {
-            Point2D screenLocalCoords = imageView.screenToLocal(event.getScreenX(), event.getScreenY());
-            currentSelectedNode = nodeController.getNode(imageView.getImage(), screenLocalCoords);
+            Point2D screenLocalCords = imageView.screenToLocal(event.getScreenX(), event.getScreenY());
+            currentSelectedNode = nodeController.getNode(imageView.getImage(), screenLocalCords);
 
             selectNode(currentSelectedNode, Color.BLUE);
             showNodeTooltip((Node) event.getSource(), event.getScreenX(), event.getScreenY(), true, true);
@@ -365,9 +365,9 @@ public class IdentificationSystemController implements Initializable {
 
     public void showNodeTooltip(Node owner, double screenX, double screenY, boolean autoHide, boolean autoHideOnEscape) {
         // get local mouse coordinates
-        Point2D screenLocalCoords = imageView.screenToLocal(screenX, screenY);
+        Point2D screenLocalCords = imageView.screenToLocal(screenX, screenY);
 
-        PixelNode selectedNode = nodeController.getNode(blackAndWhiteImage, screenLocalCoords);
+        PixelNode selectedNode = nodeController.getNode(blackAndWhiteImage, screenLocalCords);
         int sequenceNumber = nodeController.getNodeSequenceNumber(selectedNode);
         int pixelCount = selectedNode.getPixelCount();
 
