@@ -11,10 +11,7 @@ public class UnionFind {
         count = size;
 
         // initializes with each element as its own representative (its own disjoint set)
-        for (int i = 0; i < parent.length; i++) {
-            parent[i] = i;
-            rank[i] = 0;  // tree height initially 0
-        }
+        setInitialState();
     }
 
     // find with Path Compression
@@ -29,7 +26,7 @@ public class UnionFind {
         int rootP = find(p);
         int rootQ = find(q);
 
-        //rootP and rootQ are already in the same set
+        // rootP and rootQ are already in the same set
         if (rootP == rootQ) {
             return;
         }
@@ -49,7 +46,7 @@ public class UnionFind {
             rank[rootQ]++; // increase rank if same height
         }
 
-        count--; // decrease by one as two sets are merged
+        count--; // decrease count by one as two sets are merged
     }
 
     // Check if two elements are connected (in the same set)
@@ -60,5 +57,20 @@ public class UnionFind {
     // number of connected components
     public int count() {
         return count;
+    }
+
+    // reset the tree to its initial state
+    public void clear() {
+        setInitialState();
+    }
+
+    private void setInitialState() {
+        for (int i = 0; i < parent.length; i++) {
+            parent[i] = i;
+            rank[i] = 0;
+        }
+
+        // reset count
+        count = parent.length;
     }
 }

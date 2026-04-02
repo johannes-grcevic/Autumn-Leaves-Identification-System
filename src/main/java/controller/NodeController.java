@@ -9,6 +9,7 @@ import model.PixelNode;
 import model.UnionFind;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -24,6 +25,13 @@ public class NodeController {
     private final UnionFind uf;
 
     public NodeController(int size) {
+        if (size <= 0) {
+            nodes = new PixelNode[0];
+            pixelCounts = new int[0];
+            uf = new UnionFind(0);
+            return;
+        }
+
         nodes = new PixelNode[size];
         pixelCounts = new int[size];
         uf = new UnionFind(size);
@@ -33,7 +41,7 @@ public class NodeController {
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 if (reader.getColor(x, y).equals(excludeColor)) {
-                    continue; // ignore excluded pixels (black pixels)
+                    continue; // ignore excluded pixels (eg. black pixels)
                 }
 
                 // convert 2D (x, y) coordinates to 1D array index
@@ -52,25 +60,9 @@ public class NodeController {
         }
     }
 
-    protected void countPixels(int width, int height, PixelReader reader, Color excludeColor) {
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-                if (reader.getColor(x, y).equals(excludeColor)) {
-                    continue;
-                }
-
-                int index = y * width + x;
-                int rootNode = uf.find(index);
-
-                // count pixels in each node
-                pixelCounts[rootNode]++;
-            }
-        }
-    }
-
     public void createNodes(int width, int height, int minSize, PixelReader reader, Color excludeColor) {
+        // union neighboring pixels before creating clusters
         unionNeighboringPixels(width, height, reader, excludeColor);
-        countPixels(width, height, reader, excludeColor);
 
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
@@ -82,6 +74,9 @@ public class NodeController {
 
                 // find the parent of each node
                 int rootNode = uf.find(index);
+
+                // count pixels in each node
+                pixelCounts[rootNode]++;
 
                 // initialize each node
                 if (nodes[rootNode] == null) {
@@ -118,7 +113,7 @@ public class NodeController {
         return getNode(x, y, width, height);
     }
 
-    public PixelNode[] getValidNodes() {
+    public PixelNode[] getNodes() {
         List<PixelNode> validNodes = new ArrayList<>();
 
         for (PixelNode node : nodes) {
@@ -130,7 +125,7 @@ public class NodeController {
         return validNodes.toArray(new PixelNode[0]);
     }
 
-    public int getValidNodeCount() {
+    public int getNodeCount() {
         int count = 0;
         for (PixelNode node : nodes) {
             if (node != null && node.isValid()) count++;
@@ -147,9 +142,23 @@ public class NodeController {
             if (pixelCounts[i] < node.getMinSize()) continue;
 
             sequenceNumber++;
-            if (i == node.getRoot()) return sequenceNumber;
+            if (i == node.getRoot()) {
+                return sequenceNumber;
+            }
         }
 
         return 0;
+    }
+
+    public void clearNodes() {
+        // clear pixel data for each node
+        for (PixelNode node : nodes) {
+            if (node != null) node.clear();
+        }
+
+        Arrays.fill(nodes, null);
+        Arrays.fill(pixelCounts, 0);
+
+        uf.clear();
     }
 }

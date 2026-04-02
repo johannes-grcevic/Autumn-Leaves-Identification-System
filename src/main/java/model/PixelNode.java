@@ -46,7 +46,7 @@ public record PixelNode(int root, List<Integer> pixels, int minSize, int capacit
     }
 
     public boolean isValid() {
-        return root >= 0 && !pixels.isEmpty() && pixels.size() >= minSize;
+        return root >= 0 && !isEmpty() && pixels.size() >= minSize;
     }
 
     public boolean isEmpty() {

@@ -1,5 +1,7 @@
 package controller;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Point2D;
 
 import javafx.scene.Node;
@@ -16,6 +18,8 @@ import model.Bounds;
 import model.PixelNode;
 
 import util.ArrayUtils;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -27,8 +31,11 @@ public class NodeBoundsController {
     private Pane targetPane;
     private Scene targetScene;
 
+    private final List<Text> boundsNumbers;
+
     public NodeBoundsController(Pane targetPane, PixelNode[] nodes, double width, double height) {
         this.targetPane = targetPane;
+        boundsNumbers = new ArrayList<>(nodes.length);
 
         defaultMin = new Point2D(width, height);
         defaultMax = new Point2D(-1, -1);
@@ -93,11 +100,12 @@ public class NodeBoundsController {
             boundsNumber.setX(x + (width - textWidth) / 2);
             boundsNumber.setY(y + (height + textHeight) / 2);
 
+            boundsNumbers.add(boundsNumber);
             targetPane.getChildren().addAll(boundaryRect, boundsNumber);
         }
     }
 
-    private void setNodeBounds(int index, int x, int y) {
+    protected void setNodeBounds(int index, int x, int y) {
         Bounds currentBounds = bounds[index];
 
         // set min x and y bounds
@@ -117,8 +125,8 @@ public class NodeBoundsController {
         }
     }
 
-    public void setNodeBounds(int index, Bounds bounds) {
-        this.bounds[index] = bounds;
+    public void setNodeBounds(int index, Bounds bound) {
+        this.bounds[index] = bound;
     }
 
     public Bounds getNodeBounds(int index) {
@@ -152,12 +160,10 @@ public class NodeBoundsController {
     }
 
     protected void onKeyPressed(KeyEvent event) {
-        if (event.getCode() == KeyCode.N) {
-            for (Node node : targetPane.getChildren()) {
-                if (node instanceof Text) {
-                    node.setVisible(!node.isVisible());
-                }
-            }
+        if (event.getCode() != KeyCode.N) return;
+
+        for (Text number : boundsNumbers) {
+            number.setVisible(!number.isVisible());
         }
     }
 }

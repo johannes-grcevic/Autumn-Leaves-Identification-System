@@ -20,7 +20,7 @@
               <menus>
                 <Menu mnemonicParsing="false" text="File">
                   <items>
-                    <MenuItem mnemonicParsing="false" onAction="#openImageFile" text="Open..." />
+                    <MenuItem mnemonicParsing="false" onAction="#loadImageFile" text="Open..." />
                         <SeparatorMenuItem mnemonicParsing="false" />
                         <MenuItem mnemonicParsing="false" onAction="#quitApplication" text="Quit" />
                   </items>
@@ -40,9 +40,9 @@
                   </Menu>
               </menus>
             </MenuBar>
-            <Label fx:id="statusLabel" alignment="CENTER" layoutX="333.0" layoutY="86.0" prefHeight="28.0" prefWidth="614.0" text="No Image Loaded!" textAlignment="CENTER">
+            <Label fx:id="statusLabel" alignment="CENTER" layoutX="333.0" layoutY="40.0" prefHeight="28.0" prefWidth="614.0" text="No Image Loaded!" textAlignment="CENTER">
                <font>
-                  <Font name="System Bold" size="19.0" />
+                  <Font size="19.0" />
                </font>
             </Label>
          </children>
