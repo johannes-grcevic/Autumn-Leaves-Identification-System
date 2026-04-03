@@ -3,6 +3,7 @@ package model;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+@SuppressWarnings("unchecked")
 public class HashTable<K, V> implements Iterable<HashTable.Entry<K, V>> {
     // entry is a container that holds a key and value
     public static class Entry<K, V> {
