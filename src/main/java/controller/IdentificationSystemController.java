@@ -1,36 +1,42 @@
 package controller;
 
+import javafx.application.Platform;
 import javafx.beans.value.ObservableValue;
-import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.event.ActionEvent;
+import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
-import javafx.scene.control.*;
 import javafx.scene.control.Alert.AlertType;
-import javafx.scene.control.Label;
+import javafx.scene.control.*;
 import javafx.scene.image.*;
-import javafx.scene.image.Image;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.*;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.BorderStrokeStyle;
+import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import javafx.util.Duration;
 
 import main.App;
+
 import model.PixelNode;
+import model.ArrayList;
+
 import util.ColorUtils;
 import util.FXUtils;
 import util.ImageUtils;
 
 import java.io.File;
 import java.net.URL;
-import java.util.*;
-
+import java.util.Objects;
+import java.util.Random;
+import java.util.ResourceBundle;
 
 import static util.FXUtils.showAlert;
 
@@ -206,6 +212,11 @@ public class IdentificationSystemController implements Initializable {
             return;
         }
 
+        if (!hasCustomColorsSelected()) {
+            showAlert(ALERT_NO_COLORS_SELECTED, AlertType.ERROR);
+            return;
+        }
+
         PixelNode[] validNodes = nodeController.getNodes();
         Point2D[] nodeCenterPoints = new Point2D[validNodes.length];
 
@@ -241,28 +252,7 @@ public class IdentificationSystemController implements Initializable {
     }
 
     @FXML
-    private void autoSelectColors() {
-        // clear the current selection
-        clearColorSelection();
-        clearNodeSelection();
-
-        PixelReader reader = displayedImage.getPixelReader();
-
-        for (int x = 0; x < fixedWidth; x++) {
-            for (int y = 0; y < fixedHeight; y++) {
-                Color pixelColor = reader.getColor(x, y);
-
-                // add the color to the color picker if it is an autumn leaf
-                if (ImageUtils.isAutumnLeaf(pixelColor)) {
-                    addCustomColor(pixelColor);
-                }
-            }
-        }
-    }
-
-    @FXML
     private void clearColorSelection() {
-        getCustomColors().clear();
         colorPicker.getCustomColors().clear();
         colorPicker.setValue(Color.WHITE);
 
@@ -319,7 +309,7 @@ public class IdentificationSystemController implements Initializable {
     }
 
     // Events //
-    protected void onImageChanged(ObservableValue<? extends Image> value, Image oldValue, Image newValue) {
+    protected void onImageChanged(ObservableValue<?> value, Image oldValue, Image newValue) {
         if (!isImageFileLoaded()) return;
 
         if (newValue != null && !newValue.isError()) {
@@ -329,37 +319,50 @@ public class IdentificationSystemController implements Initializable {
             // hide the border after the image is loaded
             imagePane.setBorder(null);
 
-            autoSelectColors();
-            createNodesFromImage(displayedImage);
-
             // clear the color picker after loading a new image
-            if (selectedNode == null) {
-                clearColorSelection();
-            }
+            clearColorSelection();
         }
     }
 
-    protected void onColorValueChanged(ObservableValue<? extends Color> value, Color oldValue, Color newValue) {
-        if (!isImageFileLoaded()) return;
+    protected void onColorPickerClosed(Event event) {
+        if (!isImageFileLoaded() || !hasCustomColorsSelected()) return;
 
         createNodesFromImage(displayedImage);
 
         // show the number of nodes on the status bar
         setStatusBar("Leaf Count: " + nodeController.getNodeCount(), true);
+
+        // refocus the main application window after the color picker is closed
+        Platform.runLater(() -> {
+            Window mainWindow = borderPane.getScene().getWindow();
+
+            if (mainWindow != null) {
+                mainWindow.requestFocus();
+            }
+        });
     }
 
-    protected void onCustomColorsListChanged(ListChangeListener.Change<? extends Color> newValue) {
-        if (!isImageFileLoaded()) return;
+    protected void onCustomColorsListChanged(ListChangeListener.Change<?> newValue) {
+        if (!isImageFileLoaded() || newValue.getList().isEmpty() || !hasCustomColorsSelected()) return;
 
-        // show the number of nodes on the status bar
-        setStatusBar("Leaf Count: " + nodeController.getNodeCount(), true);
+        if (newValue.getList().size() >= MAX_CUSTOM_COLORS) {
+            if (nodeController.getNodeCount() == 0) {
+                createNodesFromImage(displayedImage);
+            }
+
+            // show the number of nodes on the status bar
+            setStatusBar("Leaf Count: " + nodeController.getNodeCount(), true);
+        }
     }
 
     protected void onAutoSelectButtonClicked(ActionEvent event) {
         if (!isImageFileLoaded()) return;
 
         autoSelectColors();
-        createNodesFromImage(displayedImage);
+
+        if (nodeController.getNodeCount() == 0) {
+            createNodesFromImage(displayedImage);
+        }
     }
 
     protected void onImageViewMouseClicked(MouseEvent event) {
@@ -478,9 +481,33 @@ public class IdentificationSystemController implements Initializable {
         unselectedBlackAndWhiteImage = null;
     }
 
+    public void autoSelectColors() {
+        // clear the current selection
+        if (!getCustomColors().isEmpty()) {
+            clearColorSelection();
+        }
+
+        if (selectedNode != null) {
+            clearNodeSelection();
+        }
+
+        PixelReader reader = displayedImage.getPixelReader();
+
+        for (int x = 0; x < fixedWidth; x++) {
+            for (int y = 0; y < fixedHeight; y++) {
+                Color pixelColor = reader.getColor(x, y);
+
+                // add the color to the color picker if it is an autumn leaf
+                if (ImageUtils.isAutumnLeaf(pixelColor)) {
+                    addCustomColor(pixelColor);
+                }
+            }
+        }
+    }
+
     public void createNodesFromImage(WritableImage source) {
         // black and white image based on user-selected colors
-        displayBlackAndWhiteImage = ImageUtils.getBlackAndWhite(source, getCustomColors(), 0.3, 0.2);
+        displayBlackAndWhiteImage = ImageUtils.getBlackAndWhite(source, getCustomColors().stream().toList(), 0.3, 0.2);
         PixelReader reader = displayBlackAndWhiteImage.getPixelReader();
 
         // clear the node controller if it already has nodes
@@ -512,27 +539,38 @@ public class IdentificationSystemController implements Initializable {
     }
 
     public void addCustomColor(Color color) {
-        List<Color> customColors = getCustomColors();
+        if (colorPicker.getCustomColors().size() >= MAX_CUSTOM_COLORS) return;
 
-        // prevent the ui from going out of bounds
-        if (customColors.size() >= MAX_CUSTOM_COLORS) return;
-
-        if (!customColors.contains(color)) {
-            customColors.add(color);
+        if (!colorPicker.getCustomColors().contains(color)) {
+            colorPicker.getCustomColors().add(color);
         }
     }
 
-    public List<Color> getCustomColors() {
+    public ArrayList<Color> getCustomColors() {
         ColorPicker picker = colorPicker;
-        List<Color> singleColorList = FXCollections.observableArrayList(picker.getValue());
+        ArrayList<Color> customColors = new ArrayList<>(picker.getCustomColors().size() + 1);
 
-        return picker.getValue().equals(Color.WHITE) ? picker.getCustomColors() : singleColorList;
+        Color selectedColor = picker.getValue();
+
+        // add the selected color to the list
+        if (selectedColor != null && !selectedColor.equals(Color.WHITE)) {
+            customColors.add(selectedColor);
+        }
+
+        // add all custom colors from the color picker
+        customColors.addAll(picker.getCustomColors());
+
+        return customColors;
     }
 
     public boolean hasCustomColorsSelected() {
-        List<Color> customColors = getCustomColors();
+        ArrayList<Color> customColors = getCustomColors();
 
-        return !customColors.isEmpty() && !customColors.getFirst().equals(Color.WHITE);
+        for (Color color : customColors) {
+            if (!color.equals(Color.WHITE)) return true;
+        }
+
+        return false;
     }
 
     public boolean isImageFileLoaded() {
@@ -545,8 +583,8 @@ public class IdentificationSystemController implements Initializable {
         imagePane = (Pane) borderPane.getCenter();
         FXUtils.SetBorderStyle(imagePane, Color.BLACK, BorderStrokeStyle.DASHED, 3, 2);
 
-        colorPicker.valueProperty().addListener(this::onColorValueChanged);
         colorPicker.getCustomColors().addListener(this::onCustomColorsListChanged);
+        colorPicker.setOnHidden(this::onColorPickerClosed);
 
         imageView.imageProperty().addListener(this::onImageChanged);
 

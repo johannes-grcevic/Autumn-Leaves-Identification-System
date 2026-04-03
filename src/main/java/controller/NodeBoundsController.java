@@ -1,10 +1,7 @@
 package controller;
 
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.geometry.Point2D;
 
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -14,12 +11,13 @@ import javafx.scene.shape.Rectangle;
 
 import javafx.scene.shape.StrokeType;
 import javafx.scene.text.Text;
+
 import model.Bounds;
 import model.PixelNode;
+import model.ArrayList;
 
 import util.ArrayUtils;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -31,7 +29,7 @@ public class NodeBoundsController {
     private Pane targetPane;
     private Scene targetScene;
 
-    private final List<Text> boundsNumbers;
+    private final ArrayList<Text> boundsNumbers;
 
     public NodeBoundsController(Pane targetPane, PixelNode[] nodes, double width, double height) {
         this.targetPane = targetPane;
@@ -44,7 +42,7 @@ public class NodeBoundsController {
         Arrays.setAll(bounds, _ -> new Bounds(defaultMin, defaultMax));
 
         for (int i = 0; i < nodes.length; i++) {
-            List<Integer> pixels = nodes[i].pixels();
+            List<Integer> pixels = nodes[i].pixels().stream().toList();
 
             for (Integer pixel : pixels) {
                 int x = pixel % (int) width;

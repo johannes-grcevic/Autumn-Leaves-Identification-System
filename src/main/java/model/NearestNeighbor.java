@@ -1,22 +1,22 @@
 package model;
 
 import javafx.geometry.Point2D;
-import java.util.*;
+import java.util.List;
 
 public class NearestNeighbor {
-    private final Point2D[] points;
+    private final ArrayList<Point2D> points;
 
     public NearestNeighbor(Point2D[] points) {
-        this.points = points;
+        this.points = new ArrayList<>(List.of(points));
     }
 
-    public List<Point2D> findShortestPath(Point2D start) {
-        if (start == null || start.equals(Point2D.ZERO) || points.length == 0) {
+    public ArrayList<Point2D> findShortestPath(Point2D start) {
+        if (start == null || start.equals(Point2D.ZERO) || points.isEmpty()) {
             return null;
         }
 
-        List<Point2D> path = new ArrayList<>(points.length);
-        Set<Point2D> unvisited = new HashSet<>(Arrays.asList(points));
+        ArrayList<Point2D> path = new ArrayList<>(points.size());
+        ArrayList<Point2D> unvisited = new ArrayList<>(points);
 
         // set the current point to the start point
         Point2D current = start;
@@ -45,7 +45,7 @@ public class NearestNeighbor {
 
     // get the nearest neighbor to the current point based on the distance
     // we have to traverse the unvisited points each time to find the nearest neighbor
-    public Point2D getNearestNeighbour(Point2D current, Set<Point2D> unvisited) {
+    public Point2D getNearestNeighbour(Point2D current, ArrayList<Point2D> unvisited) {
         if (unvisited.isEmpty() || current.equals(Point2D.ZERO)) return Point2D.ZERO;
 
         Point2D nearestNeightbour = Point2D.ZERO;

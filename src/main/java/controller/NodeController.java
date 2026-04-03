@@ -6,11 +6,10 @@ import javafx.scene.image.PixelReader;
 import javafx.scene.paint.Color;
 
 import model.PixelNode;
+import model.ArrayList;
 import model.UnionFind;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * The node controller uses the union-find algorithm to group nodes of pixels.
@@ -114,7 +113,7 @@ public class NodeController {
     }
 
     public PixelNode[] getNodes() {
-        List<PixelNode> validNodes = new ArrayList<>();
+        ArrayList<PixelNode> validNodes = new ArrayList<>();
 
         for (PixelNode node : nodes) {
             if (node != null && node.isValid()) {

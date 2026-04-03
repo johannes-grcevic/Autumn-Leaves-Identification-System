@@ -2,10 +2,7 @@ package model;
 
 import javafx.geometry.Point2D;
 
-import java.util.ArrayList;
-import java.util.List;
-
-public record PixelNode(int root, List<Integer> pixels, int minSize, int capacity, int imageWidth) {
+public record PixelNode(int root, ArrayList<Integer> pixels, int minSize, int capacity, int imageWidth) {
     public PixelNode(int root, int minSize, int capacity, int imageWidth) {
         this(root, new ArrayList<>(capacity), minSize, capacity, imageWidth);
     }
