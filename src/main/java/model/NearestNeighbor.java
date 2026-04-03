@@ -10,10 +10,9 @@ public class NearestNeighbor {
         this.points = new ArrayList<>(List.of(points));
     }
 
+    // find the shortest path from the start point to all other points
     public ArrayList<Point2D> findShortestPath(Point2D start) {
-        if (start == null || start.equals(Point2D.ZERO) || points.isEmpty()) {
-            return null;
-        }
+        if (start == null || start.equals(Point2D.ZERO) || points.isEmpty()) return new ArrayList<>(0);
 
         ArrayList<Point2D> path = new ArrayList<>(points.size());
         ArrayList<Point2D> unvisited = new ArrayList<>(points);

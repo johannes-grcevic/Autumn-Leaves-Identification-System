@@ -15,7 +15,6 @@ import javafx.scene.image.*;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
@@ -24,10 +23,8 @@ import javafx.stage.Window;
 import javafx.util.Duration;
 
 import main.App;
-
-import model.PixelNode;
 import model.ArrayList;
-
+import model.PixelNode;
 import util.ColorUtils;
 import util.FXUtils;
 import util.ImageUtils;
@@ -39,6 +36,7 @@ import java.util.Random;
 import java.util.ResourceBundle;
 
 import static util.FXUtils.showAlert;
+import static util.FXUtils.showConfirmationAlert;
 
 public class IdentificationSystemController implements Initializable {
     @FXML
@@ -51,6 +49,8 @@ public class IdentificationSystemController implements Initializable {
     private Label statusLabel;
     @FXML
     private Button autoSelectColorsButton;
+    @FXML
+    private Button clearColorSelectionButton;
 
     private final Tooltip nodeTooltip;
     private final ContextMenu nodeContextMenu;
@@ -84,7 +84,7 @@ public class IdentificationSystemController implements Initializable {
         // the maximum number of custom colors that can be selected by the user
         MAX_CUSTOM_COLORS = 120;
 
-        ALERT_NO_IMAGE_LOADED = "No Image Loaded!";
+        ALERT_NO_IMAGE_LOADED = "Open an Image to get started!";
         ALERT_NO_COLORS_SELECTED = "No Colors Selected!";
         ALERT_NO_NODE_SELECTED = "No Leaf Selected!";
 
@@ -126,15 +126,18 @@ public class IdentificationSystemController implements Initializable {
         fixedWidth = (int) imagePane.getWidth();
         fixedHeight = (int) imagePane.getHeight();
 
-        // initialize the node controller with the image dimensions
-        nodeController = new NodeController(fixedWidth * fixedHeight);
-
         // resize the original image to fit the center pane
         Image originalColorImage = new Image(imageURL, fixedWidth, fixedHeight, false, false);
 
         // initialize the image view with the display image
         displayedImage = new WritableImage(originalColorImage.getPixelReader(), fixedWidth, fixedHeight);
         imageView.setImage(displayedImage);
+
+        // initialize the node controller with the image dimensions
+        initializeNodeController(fixedWidth * fixedHeight);
+
+        // disable the interactive features of the app until the image is loaded
+        setButtonControlsActive(true);
     }
 
     @FXML
@@ -266,7 +269,7 @@ public class IdentificationSystemController implements Initializable {
         if (!isImageFileLoaded()) return;
 
         // Only clear the image if the user selects ok
-        if (!showAlert("Are you sure you want to clear the loaded image?", AlertType.CONFIRMATION).equals(ButtonType.OK))
+        if (!showConfirmationAlert("Are you sure you want to clear the loaded image?").equals(ButtonType.OK))
             return;
 
         // clear image data
@@ -291,8 +294,7 @@ public class IdentificationSystemController implements Initializable {
         selectedNode = null;
 
         setStatusBar(ALERT_NO_IMAGE_LOADED, true);
-        // show the border after the image is cleared
-        FXUtils.SetBorderStyle(imagePane, Color.BLACK, BorderStrokeStyle.DASHED, 3, 2);
+        setButtonControlsActive(false);
 
         // clear the color selection
         clearColorSelection();
@@ -301,7 +303,7 @@ public class IdentificationSystemController implements Initializable {
     @FXML
     private void quitApplication() {
         // Only quit if the user selects ok
-        if (!showAlert("Are you sure you want to quit?", AlertType.CONFIRMATION).equals(ButtonType.OK))
+        if (!showConfirmationAlert("Are you sure you want to quit?").equals(ButtonType.OK))
             return;
 
         // Close the application
@@ -345,7 +347,16 @@ public class IdentificationSystemController implements Initializable {
     protected void onCustomColorsListChanged(ListChangeListener.Change<?> newValue) {
         if (!isImageFileLoaded() || newValue.getList().isEmpty() || !hasCustomColorsSelected()) return;
 
-        if (newValue.getList().size() >= MAX_CUSTOM_COLORS) {
+        // check if the user has selected more than the maximum number of custom colors
+        if (newValue.getList().size() > MAX_CUSTOM_COLORS) {
+            showAlert("You can only select up to " + MAX_CUSTOM_COLORS + " custom colors!", AlertType.ERROR);
+            colorPicker.getCustomColors().remove(newValue.getList().size() - 1);
+            colorPicker.toBack();
+            colorPicker.hide();
+            return;
+        }
+
+        if (newValue.getList().size() <= MAX_CUSTOM_COLORS) {
             if (nodeController.getNodeCount() == 0) {
                 createNodesFromImage(displayedImage);
             }
@@ -505,6 +516,10 @@ public class IdentificationSystemController implements Initializable {
         }
     }
 
+    public void initializeNodeController(int imageSize) {
+        nodeController = new NodeController(imageSize);
+    }
+
     public void createNodesFromImage(WritableImage source) {
         // black and white image based on user-selected colors
         displayBlackAndWhiteImage = ImageUtils.getBlackAndWhite(source, getCustomColors().stream().toList(), 0.3, 0.2);
@@ -566,11 +581,19 @@ public class IdentificationSystemController implements Initializable {
     public boolean hasCustomColorsSelected() {
         ArrayList<Color> customColors = getCustomColors();
 
+        if (colorPicker.getValue().equals(Color.WHITE)) return true;
+
         for (Color color : customColors) {
             if (!color.equals(Color.WHITE)) return true;
         }
 
         return false;
+    }
+
+    public void setButtonControlsActive(boolean value) {
+        autoSelectColorsButton.setDisable(!value);
+        clearColorSelectionButton.setDisable(!value);
+        colorPicker.setDisable(!value);
     }
 
     public boolean isImageFileLoaded() {
@@ -581,7 +604,6 @@ public class IdentificationSystemController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         imagePane = (Pane) borderPane.getCenter();
-        FXUtils.SetBorderStyle(imagePane, Color.BLACK, BorderStrokeStyle.DASHED, 3, 2);
 
         colorPicker.getCustomColors().addListener(this::onCustomColorsListChanged);
         colorPicker.setOnHidden(this::onColorPickerClosed);
@@ -591,5 +613,14 @@ public class IdentificationSystemController implements Initializable {
         imageView.setOnMouseClicked(this::onImageViewMouseClicked);
         autoSelectColorsButton.setOnAction(this::onAutoSelectButtonClicked);
         addToColorPickerMenuItem.setOnAction(this::onAddToColorPickerClicked);
+
+        setButtonControlsActive(false);
+
+        // add hover scale animation to the buttons
+        FXUtils.setHoverScaleAnimation(autoSelectColorsButton, 1.03, Duration.millis(200));
+        FXUtils.setHoverScaleAnimation(clearColorSelectionButton, 1.03, Duration.millis(200));
+        FXUtils.setHoverScaleAnimation(colorPicker, 1.03, Duration.millis(200));
+
+        setStatusBar(ALERT_NO_IMAGE_LOADED, true);
     }
 }

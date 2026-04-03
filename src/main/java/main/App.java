@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -26,6 +27,9 @@ public class App extends Application {
         stage.setResizable(false);
         stage.setScene(scene);
         stage.show();
+
+        // set the application icon
+        stage.getIcons().add(new Image(Objects.requireNonNull(App.class.getResource("icon.png")).toExternalForm(), 64, 64, true, true));
     }
 
     // load an FXML file

@@ -1,4 +1,42 @@
+.menuBar {
+    -fx-border-radius: 25px;
+    -fx-background-radius: 5px;
+    -fx-cursor: hand;
+}
+
+.button {
+    -fx-border-radius: 25px;
+    -fx-background-radius: 5px;
+    -fx-animated: true;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: LightBlue;
+}
+
 .bounds-number {
     -fx-font-size: 13px;
     -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.borderPane {
+    -fx-background-image: url("background.png");
+    -fx-background-color: rgba(255, 255, 255, 0.8);
+    -fx-background-size: cover;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.5), 10, 0, 0, 0);
+}
+
+.centerPane {
+    -fx-background-image: url("no_image.jpg");
+    -fx-background-color: rgba(255, 255, 255, 0.6);
+    -fx-background-radius: 5px;
+    -fx-background-size: 30%;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.5), 10, 0, 0, 0);
+    -fx-cursor: hand;
 }

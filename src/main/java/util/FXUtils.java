@@ -1,18 +1,29 @@
 package util;
 
+import javafx.animation.ScaleTransition;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 public class FXUtils {
-    public static ButtonType showAlert(String message, Alert.AlertType alertType) {
+    public static void showAlert(String message, Alert.AlertType alertType) {
         Alert alert = new Alert(alertType);
         alert.setTitle(StringUtils.capitalize(alertType.toString()));
         alert.setHeaderText(message);
+        alert.show();
+    }
+
+    public static ButtonType showConfirmationAlert(String message) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Confirmation");
+        alert.setHeaderText(message);
+
+        // wait for the user to click on a button
         alert.showAndWait();
 
         return alert.getResult();
@@ -30,18 +41,23 @@ public class FXUtils {
         return stage;
     }
 
-    public static void SetBorderStyle(Region border, Color color, BorderStrokeStyle style, double cornerRadius, double width) {
-        BorderStroke stroke = new BorderStroke(
-                color,
-                style,
-                new CornerRadii(cornerRadius),
-                new BorderWidths(width)
-        );
+    public static void setHoverScaleAnimation(Node node, double scaleFactor, Duration duration) {
+        ScaleTransition scaleIn = new ScaleTransition(duration, node);
+        scaleIn.setToX(scaleFactor);
+        scaleIn.setToY(scaleFactor);
 
-        border.setBorder(new Border(stroke));
-    }
+        ScaleTransition scaleOut = new ScaleTransition(duration, node);
+        scaleOut.setToX(node.getScaleX());
+        scaleOut.setToY(node.getScaleY());
 
-    public static void SetBorderStyle(Region border, BorderStroke stroke) {
-        border.setBorder(new Border(stroke));
+        node.setOnMouseEntered(_ -> {
+            scaleOut.stop();
+            scaleIn.playFromStart();
+        });
+
+        node.setOnMouseExited(_ -> {
+            scaleIn.stop();
+            scaleOut.playFromStart();
+        });
     }
 }
