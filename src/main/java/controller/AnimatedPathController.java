@@ -15,13 +15,15 @@ import javafx.util.Duration;
 import model.ArrayList;
 import model.NearestNeighbor;
 
+import java.util.List;
+
 public class AnimatedPathController {
     // path to animate along
     private final Path path;
     // nearest neighbor algorithm
     private final NearestNeighbor nn;
 
-    public AnimatedPathController(ArrayList<Point2D> nodePoints) {
+    public AnimatedPathController(List<Point2D> nodePoints) {
         path = new Path();
         nn = new NearestNeighbor(nodePoints);
     }
@@ -37,10 +39,10 @@ public class AnimatedPathController {
         target.getChildren().add(path);
 
         // get the shortest path between the start and end points using the nearest neighbor algorithm
-        ArrayList<Point2D> shortestPath = nn.findShortestPath(start);
+        List<Point2D> shortestPath = nn.findShortestPath(start);
 
         // get all the rectangles in the target pane
-        ArrayList<Rectangle> unordered = new ArrayList<>();
+        List<Rectangle> unordered = new ArrayList<>();
 
         for (Node node : target.getChildren()) {
             if (node instanceof Rectangle rectangle) {
@@ -50,8 +52,8 @@ public class AnimatedPathController {
 
         // get all the rectangles in the target pane
         // sort rectangles to match the order of the path points by matching centers
-        ArrayList<Rectangle> rectangles = new ArrayList<>(shortestPath.size());
-        ArrayList<Rectangle> remaining = new ArrayList<>(unordered);
+        List<Rectangle> rectangles = new ArrayList<>(shortestPath.size());
+        List<Rectangle> remaining = new ArrayList<>(unordered);
 
         for (Point2D current : shortestPath) {
             Rectangle nearestRect = null;

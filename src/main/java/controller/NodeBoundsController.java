@@ -16,6 +16,8 @@ import model.ArrayList;
 
 import util.ArrayUtils;
 
+import java.util.List;
+
 public class NodeBoundsController {
     private final ArrayList<Bounds> bounds;
     private final Point2D defaultMin;
@@ -24,10 +26,10 @@ public class NodeBoundsController {
     private Pane targetPane;
     private Scene targetScene;
 
-    private final ArrayList<Text> boundsNumbers;
+    private final List<Text> boundsNumbers;
 
-    public NodeBoundsController(Pane targetPane, ArrayList<PixelNode> nodes, double width, double height) {
-        this.targetPane = targetPane;
+    public NodeBoundsController(Pane target, List<PixelNode> nodes, double width, double height) {
+        targetPane = target;
         boundsNumbers = new ArrayList<>(nodes.size());
 
         defaultMin = new Point2D(width, height);
@@ -39,7 +41,7 @@ public class NodeBoundsController {
         }
 
         for (int i = 0; i < nodes.size(); i++) {
-            ArrayList<Integer> indexes = nodes.get(i).indexes();
+            List<Integer> indexes = nodes.get(i).indexes();
 
             for (Integer index : indexes) {
                 int x = index % (int) width;

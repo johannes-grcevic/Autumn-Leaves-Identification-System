@@ -2,19 +2,21 @@ package model;
 
 import javafx.geometry.Point2D;
 
-public class NearestNeighbor {
-    private final ArrayList<Point2D> points;
+import java.util.List;
 
-    public NearestNeighbor(ArrayList<Point2D> points) {
+public class NearestNeighbor {
+    private final List<Point2D> points;
+
+    public NearestNeighbor(List<Point2D> points) {
         this.points = points;
     }
 
     // find the shortest path from the start point to all other points
-    public ArrayList<Point2D> findShortestPath(Point2D start) {
-        if (start == null || start.equals(Point2D.ZERO) || points.isEmpty()) return new ArrayList<>(0);
+    public List<Point2D> findShortestPath(Point2D start) {
+        if (start == null || start.equals(Point2D.ZERO) || points.isEmpty()) return List.of();
 
-        ArrayList<Point2D> path = new ArrayList<>(points.size());
-        ArrayList<Point2D> unvisited = new ArrayList<>(points);
+        List<Point2D> path = new ArrayList<>(points.size());
+        List<Point2D> unvisited = new ArrayList<>(points);
 
         // set the current point to the start point
         Point2D current = start;
@@ -43,10 +45,10 @@ public class NearestNeighbor {
 
     // get the nearest neighbor to the current point based on the distance
     // we have to traverse the unvisited points each time to find the nearest neighbor
-    public Point2D getNearestNeighbour(Point2D current, ArrayList<Point2D> unvisited) {
+    public Point2D getNearestNeighbour(Point2D current, List<Point2D> unvisited) {
         if (unvisited.isEmpty() || current.equals(Point2D.ZERO)) return Point2D.ZERO;
 
-        Point2D nearestNeightbour = Point2D.ZERO;
+        Point2D nearestNeighbour = Point2D.ZERO;
         double nearestDistance = Double.MAX_VALUE;
 
         // find the nearest neighbor in the set of unvisited points
@@ -57,11 +59,11 @@ public class NearestNeighbor {
             // update the nearest point if the distance is smaller than the current nearest neighbor
             if (distance < nearestDistance) {
                 nearestDistance = distance;
-                nearestNeightbour = point;
+                nearestNeighbour = point;
             }
         }
 
-        return nearestNeightbour;
+        return nearestNeighbour;
     }
 
     // distance between two points

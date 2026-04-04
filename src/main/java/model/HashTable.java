@@ -197,7 +197,7 @@ public class HashTable<K, V> implements Iterable<HashTable.Entry<K, V>> {
     }
 
     public Collection<K> keys() {
-        Collection<K> keys = new ArrayList<>();
+        Collection<K> keys = Collections.synchronizedCollection(new ArrayList<>());
 
         for (Entry<K, V> entry : table) {
             if (entry != null) {
@@ -208,8 +208,8 @@ public class HashTable<K, V> implements Iterable<HashTable.Entry<K, V>> {
         return keys;
     }
 
-    public ArrayList<V> values() {
-        ArrayList<V> values = new ArrayList<>();
+    public Collection<V> values() {
+        Collection<V> values = Collections.synchronizedCollection(new ArrayList<>());
 
         for (Entry<K, V> entry : table) {
             if (entry != null) {
@@ -220,6 +220,7 @@ public class HashTable<K, V> implements Iterable<HashTable.Entry<K, V>> {
         return values;
     }
 
+    // removes all entries from the table
     public void clear() {
         for (int i = 0; i < capacity; i++) {
             table[i] = null;

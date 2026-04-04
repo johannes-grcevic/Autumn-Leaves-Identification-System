@@ -2,7 +2,9 @@ package model;
 
 import javafx.geometry.Point2D;
 
-public record PixelNode(int root, ArrayList<Integer> indexes, int minSize, int imageWidth) {
+import java.util.List;
+
+public record PixelNode(int root, List<Integer> indexes, int minSize, int imageWidth) {
 
     public static final PixelNode EMPTY = new PixelNode(-1, 0, 0);
 

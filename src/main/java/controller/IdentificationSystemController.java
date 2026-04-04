@@ -176,7 +176,7 @@ public class IdentificationSystemController implements Initializable {
         if (displayBlackAndWhiteImage == null) return;
 
         WritableImage randomColoredImage = new WritableImage(displayBlackAndWhiteImage.getPixelReader(), fixedWidth, fixedHeight);
-        ArrayList<PixelNode> nodes = nodeController.getNodes();
+        List<PixelNode> nodes = nodeController.getNodes();
 
         for (PixelNode node : nodes) {
             Color randomColor = ColorUtils.getRandomColor(RANDOM_GENERATOR);
@@ -225,11 +225,11 @@ public class IdentificationSystemController implements Initializable {
             return;
         }
 
-        ArrayList<PixelNode> nodes = nodeController.getNodes();
-        ArrayList<Point2D> centerPoints = new ArrayList<>(nodes.size());
+        List<PixelNode> nodes = nodeController.getNodes();
+        List<Point2D> centerPoints = new ArrayList<>(nodes.size());
 
-        for (int i = 0; i < nodes.size(); i++) {
-            centerPoints.add(nodes.get(i).getCenter());
+        for (PixelNode node : nodes) {
+            centerPoints.add(node.getCenter());
         }
 
         if (selectedNode == null) {

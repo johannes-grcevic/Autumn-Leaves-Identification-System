@@ -8,6 +8,8 @@ import model.HashTable;
 import model.PixelNode;
 import model.UnionFind;
 
+import java.util.List;
+
 /**
  * The node controller uses the union-find algorithm to group nodes of pixels.
  */
@@ -89,8 +91,8 @@ public class NodeController {
         return node;
     }
 
-    public ArrayList<PixelNode> getNodes() {
-        ArrayList<PixelNode> nodes = new ArrayList<>();
+    public List<PixelNode> getNodes() {
+        List<PixelNode> nodes = new ArrayList<>();
 
         for (PixelNode node : this.nodes.values()) {
             if (node != null && node.isValid()) {
@@ -114,7 +116,7 @@ public class NodeController {
     public int getNodeSequenceNumber(PixelNode node) {
         if (node == null || !node.isValid()) return 0;
 
-        ArrayList<PixelNode> nodes = getNodes();
+        List<PixelNode> nodes = getNodes();
 
         int sequenceNumber = 0;
         for (int i = nodes.size() - 1; i >= 0; i--) {

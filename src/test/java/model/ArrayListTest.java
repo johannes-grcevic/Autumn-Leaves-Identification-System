@@ -57,7 +57,7 @@ class ArrayListTest {
     void testAdd() {
         assertTrue(list.add("A"));
         assertEquals(1, list.size());
-        assertEquals("A", list.get(0));
+        assertEquals("A", list.getFirst());
         
         assertTrue(list.add("B"));
         assertEquals(2, list.size());
@@ -114,18 +114,18 @@ class ArrayListTest {
         assertEquals("A", list.get(0));
         assertEquals("C", list.get(1));
         
-        list.remove(0);
+        list.removeFirst();
         assertEquals(1, list.size());
-        assertEquals("C", list.get(0));
+        assertEquals("C", list.getFirst());
         
-        list.remove(0);
+        list.removeFirst();
         assertEquals(0, list.size());
         assertTrue(list.isEmpty());
     }
 
     @Test
     void testRemoveAtIndexOutOfBounds() {
-        assertThrows(IndexOutOfBoundsException.class, () -> list.remove(0));
+        assertThrows(IndexOutOfBoundsException.class, () -> list.removeFirst());
 
         list.add("A");
         assertThrows(IndexOutOfBoundsException.class, () -> list.remove(1));
@@ -191,7 +191,7 @@ class ArrayListTest {
         list.add("A");
         list.set(0, "B");
 
-        assertEquals("B", list.get(0));
+        assertEquals("B", list.getFirst());
         assertThrows(IndexOutOfBoundsException.class, () -> list.set(1, "C"));
     }
 
@@ -222,7 +222,7 @@ class ArrayListTest {
         list.add("B");
 
         assertTrue(list.containsAll(List.of("A", "B")));
-        assertTrue(list.containsAll(List.of("A")));
+        assertTrue(list.contains("A"));
         assertFalse(list.containsAll(List.of("A", "C")));
     }
 
