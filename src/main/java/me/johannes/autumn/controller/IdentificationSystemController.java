@@ -210,7 +210,7 @@ public class IdentificationSystemController implements Initializable {
         // display the bound popup window
         Stage stage = FXUtils.showPopupWindow("Bounds | Press 'N' for numbering", drawPane, drawPane.getPrefWidth(), drawPane.getPrefHeight(), false);
         controller.setTargetScene(stage.getScene());
-        stage.getScene().getStylesheets().add(Objects.requireNonNull(App.class.getResource("style.css")).toExternalForm());
+        stage.getScene().getStylesheets().add(Objects.requireNonNull(App.class.getResource("me/johannes/autumn/style.css")).toExternalForm());
     }
 
     @FXML
@@ -242,7 +242,7 @@ public class IdentificationSystemController implements Initializable {
 
         // display the animated path popup window
         Stage stage = FXUtils.showPopupWindow("Path | Press 'N' for numbering", drawPane, drawPane.getPrefWidth(), drawPane.getPrefHeight(), false);
-        stage.getScene().getStylesheets().add(Objects.requireNonNull(App.class.getResource("style.css")).toExternalForm());
+        stage.getScene().getStylesheets().add(Objects.requireNonNull(App.class.getResource("me/johannes/autumn/style.css")).toExternalForm());
 
         // initialize the node bounds controller
         NodeBoundsController controller = new NodeBoundsController(drawPane, nodes, fixedWidth, fixedHeight);
