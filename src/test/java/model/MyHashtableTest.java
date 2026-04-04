@@ -1,6 +1,6 @@
 package model;
 
-import me.johannes.autumn.model.HashTable;
+import me.johannes.autumn.model.MyHashtable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -9,18 +9,18 @@ import java.util.NoSuchElementException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class HashTableTest {
+class MyHashtableTest {
 
-    private HashTable<String, Integer> table;
+    private MyHashtable<String, Integer> table;
 
     @BeforeEach
     void setUp() {
-        table = new HashTable<>();
+        table = new MyHashtable<>();
     }
 
     @Test
     void testConstructorDefault() {
-        HashTable<String, Integer> defaultTable = new HashTable<>();
+        MyHashtable<String, Integer> defaultTable = new MyHashtable<>();
 
         assertEquals(0, defaultTable.size());
         assertTrue(defaultTable.isEmpty());
@@ -28,7 +28,7 @@ class HashTableTest {
 
     @Test
     void testConstructorCustomCapacity() {
-        HashTable<String, Integer> customTable = new HashTable<>(10);
+        MyHashtable<String, Integer> customTable = new MyHashtable<>(10);
 
         assertEquals(0, customTable.size());
         assertTrue(customTable.isEmpty());
@@ -36,8 +36,8 @@ class HashTableTest {
 
     @Test
     void testConstructorInvalidCapacity() {
-        assertThrows(IllegalArgumentException.class, () -> new HashTable<>(0));
-        assertThrows(IllegalArgumentException.class, () -> new HashTable<>(-1));
+        assertThrows(IllegalArgumentException.class, () -> new MyHashtable<>(0));
+        assertThrows(IllegalArgumentException.class, () -> new MyHashtable<>(-1));
     }
 
     @Test
@@ -145,7 +145,7 @@ class HashTableTest {
             }
         }
 
-        HashTable<MockKey, Integer> collisionTable = new HashTable<>(16);
+        MyHashtable<MockKey, Integer> collisionTable = new MyHashtable<>(16);
         MockKey k1 = new MockKey("k1", 1);
         MockKey k2 = new MockKey("k2", 1); // Collision with k1
         MockKey k3 = new MockKey("k3", 17); // Collision with k1 (17 % 16 = 1)
@@ -181,7 +181,7 @@ class HashTableTest {
     @Test
     void testTombstoneRehash() {
         // Implementation rehashes if tombstones > size
-        HashTable<String, Integer> smallTable = new HashTable<>(4);
+        MyHashtable<String, Integer> smallTable = new MyHashtable<>(4);
 
         smallTable.put("A", 1);
         smallTable.put("B", 2);
@@ -196,7 +196,7 @@ class HashTableTest {
 
     @Test
     void testTombstoneReuse() {
-        HashTable<String, Integer> smallTable = new HashTable<>(4);
+        MyHashtable<String, Integer> smallTable = new MyHashtable<>(4);
         // Keys that collide
         // String "A" hash is 65, "E" is 69. 65%4 = 1, 69%4 = 1.
         smallTable.put("A", 1); // Index 1
@@ -220,13 +220,13 @@ class HashTableTest {
         table.put("C", 3);
         table.remove("B");
 
-        Iterator<HashTable.Entry<String, Integer>> it = table.iterator();
+        Iterator<MyHashtable.Entry<String, Integer>> it = table.iterator();
         assertTrue(it.hasNext());
-        HashTable.Entry<String, Integer> e1 = it.next();
+        MyHashtable.Entry<String, Integer> e1 = it.next();
         assertTrue(e1.getKey().equals("A") || e1.getKey().equals("C"));
         
         assertTrue(it.hasNext());
-        HashTable.Entry<String, Integer> e2 = it.next();
+        MyHashtable.Entry<String, Integer> e2 = it.next();
         assertTrue(e2.getKey().equals("A") || e2.getKey().equals("C"));
         assertNotEquals(e1.getKey(), e2.getKey());
 
@@ -236,7 +236,7 @@ class HashTableTest {
 
     @Test
     void testEntryGetters() {
-        HashTable.Entry<String, String> entry = new HashTable.Entry<>("Key", "Value");
+        MyHashtable.Entry<String, String> entry = new MyHashtable.Entry<>("Key", "Value");
 
         assertEquals("Key", entry.getKey());
         assertEquals("Value", entry.getValue());

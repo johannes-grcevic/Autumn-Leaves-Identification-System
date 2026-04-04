@@ -10,7 +10,7 @@ public record PixelNode(int root, List<Integer> pixelIndexes, int minSize, int i
 
     // constructor for creating a new node
     public PixelNode(int root, int minSize, int imageWidth) {
-        this(root, new ArrayList<>(), minSize, imageWidth);
+        this(root, new MyArrayList<>(), minSize, imageWidth);
     }
 
     public void addPixelIndex(int value) {

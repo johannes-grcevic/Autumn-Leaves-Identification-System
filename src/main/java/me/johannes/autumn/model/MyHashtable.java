@@ -3,7 +3,7 @@ package me.johannes.autumn.model;
 import java.util.*;
 
 @SuppressWarnings("unchecked")
-public class HashTable<K, V> implements Iterable<HashTable.Entry<K, V>> {
+public class MyHashtable<K, V> implements Iterable<MyHashtable.Entry<K, V>> {
     // entry is a container that holds a key and value
     public static class Entry<K, V> {
         private final K key;
@@ -27,7 +27,7 @@ public class HashTable<K, V> implements Iterable<HashTable.Entry<K, V>> {
 
     private static final double DEFAULT_LOAD_FACTOR = 0.75;
 
-    public HashTable(int initialCapacity) {
+    public MyHashtable(int initialCapacity) {
         if (initialCapacity <= 0) {
             throw new IllegalArgumentException("Initial capacity must be greater than 0.");
         }
@@ -38,7 +38,7 @@ public class HashTable<K, V> implements Iterable<HashTable.Entry<K, V>> {
         this.tombstones = 0;
     }
 
-    public HashTable() {
+    public MyHashtable() {
         this(16);
     }
 
@@ -197,7 +197,7 @@ public class HashTable<K, V> implements Iterable<HashTable.Entry<K, V>> {
     }
 
     public Collection<K> keys() {
-        Collection<K> keys = Collections.synchronizedCollection(new ArrayList<>());
+        Collection<K> keys = Collections.synchronizedCollection(new MyArrayList<>());
 
         for (Entry<K, V> entry : table) {
             if (entry != null) {
@@ -209,7 +209,7 @@ public class HashTable<K, V> implements Iterable<HashTable.Entry<K, V>> {
     }
 
     public Collection<V> values() {
-        Collection<V> values = Collections.synchronizedCollection(new ArrayList<>());
+        Collection<V> values = Collections.synchronizedCollection(new MyArrayList<>());
 
         for (Entry<K, V> entry : table) {
             if (entry != null) {

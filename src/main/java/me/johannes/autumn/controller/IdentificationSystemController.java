@@ -23,7 +23,7 @@ import javafx.stage.Window;
 import javafx.util.Duration;
 
 import me.johannes.autumn.main.App;
-import me.johannes.autumn.model.ArrayList;
+import me.johannes.autumn.model.MyArrayList;
 import me.johannes.autumn.model.PixelNode;
 import me.johannes.autumn.util.ColorUtils;
 import me.johannes.autumn.util.FXUtils;
@@ -210,7 +210,7 @@ public class IdentificationSystemController implements Initializable {
         // display the bound popup window
         Stage stage = FXUtils.showPopupWindow("Bounds | Press 'N' for numbering", drawPane, drawPane.getPrefWidth(), drawPane.getPrefHeight(), false);
         controller.setTargetScene(stage.getScene());
-        stage.getScene().getStylesheets().add(Objects.requireNonNull(App.class.getResource("me/johannes/autumn/style.css")).toExternalForm());
+        stage.getScene().getStylesheets().add(Objects.requireNonNull(App.getStylesheet("style")));
     }
 
     @FXML
@@ -226,7 +226,7 @@ public class IdentificationSystemController implements Initializable {
         }
 
         List<PixelNode> nodes = nodeController.getNodes();
-        List<Point2D> centerPoints = new ArrayList<>(nodes.size());
+        List<Point2D> centerPoints = new MyArrayList<>(nodes.size());
 
         for (PixelNode node : nodes) {
             centerPoints.add(node.getCenter());
@@ -242,7 +242,7 @@ public class IdentificationSystemController implements Initializable {
 
         // display the animated path popup window
         Stage stage = FXUtils.showPopupWindow("Path | Press 'N' for numbering", drawPane, drawPane.getPrefWidth(), drawPane.getPrefHeight(), false);
-        stage.getScene().getStylesheets().add(Objects.requireNonNull(App.class.getResource("me/johannes/autumn/style.css")).toExternalForm());
+        stage.getScene().getStylesheets().add(Objects.requireNonNull(App.getStylesheet("style")));
 
         // initialize the node bounds controller
         NodeBoundsController controller = new NodeBoundsController(drawPane, nodes, fixedWidth, fixedHeight);

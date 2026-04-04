@@ -12,14 +12,14 @@ import javafx.scene.text.Text;
 
 import me.johannes.autumn.model.Bounds;
 import me.johannes.autumn.model.PixelNode;
-import me.johannes.autumn.model.ArrayList;
+import me.johannes.autumn.model.MyArrayList;
 
 import me.johannes.autumn.util.ArrayUtils;
 
 import java.util.List;
 
 public class NodeBoundsController {
-    private final ArrayList<Bounds> bounds;
+    private final MyArrayList<Bounds> bounds;
     private final Point2D defaultMin;
     private final Point2D defaultMax;
 
@@ -30,12 +30,12 @@ public class NodeBoundsController {
 
     public NodeBoundsController(Pane target, List<PixelNode> nodes, double width, double height) {
         targetPane = target;
-        boundsNumbers = new ArrayList<>(nodes.size());
+        boundsNumbers = new MyArrayList<>(nodes.size());
 
         defaultMin = new Point2D(width, height);
         defaultMax = new Point2D(-1, -1);
 
-        bounds = new ArrayList<>(nodes.size());
+        bounds = new MyArrayList<>(nodes.size());
         for (int i = 0; i < nodes.size(); i++) {
             bounds.add(new Bounds(defaultMin, defaultMax));
         }

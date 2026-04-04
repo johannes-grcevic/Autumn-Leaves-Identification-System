@@ -1,6 +1,8 @@
 package me.johannes.autumn.main;
 
 import javafx.application.Application;
+import javafx.collections.FXCollections;
+import javafx.css.Stylesheet;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -42,6 +44,10 @@ public class App extends Application {
     // get a resource from the resources folder
     public static URL getResource(String filename) {
         return App.class.getResource("/me/johannes/autumn/" + filename);
+    }
+
+    public static String getStylesheet(String filename) {
+        return getResource(filename + ".css").toExternalForm();
     }
 
     // start the application

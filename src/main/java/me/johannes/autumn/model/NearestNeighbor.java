@@ -15,8 +15,8 @@ public class NearestNeighbor {
     public List<Point2D> findShortestPath(Point2D start) {
         if (start == null || start.equals(Point2D.ZERO) || points.isEmpty()) return List.of();
 
-        List<Point2D> path = new ArrayList<>(points.size());
-        List<Point2D> unvisited = new ArrayList<>(points);
+        List<Point2D> path = new MyArrayList<>(points.size());
+        List<Point2D> unvisited = new MyArrayList<>(points);
 
         // set the current point to the start point
         Point2D current = start;

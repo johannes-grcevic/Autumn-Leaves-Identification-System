@@ -1,6 +1,6 @@
 package model;
 
-import me.johannes.autumn.model.ArrayList;
+import me.johannes.autumn.model.MyArrayList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -10,18 +10,18 @@ import java.util.NoSuchElementException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class ArrayListTest {
+class MyArrayListTest {
 
-    private ArrayList<String> list;
+    private MyArrayList<String> list;
 
     @BeforeEach
     void setUp() {
-        list = new ArrayList<>();
+        list = new MyArrayList<>();
     }
 
     @Test
     void testConstructorEmpty() {
-        ArrayList<Integer> intList = new ArrayList<>();
+        MyArrayList<Integer> intList = new MyArrayList<>();
 
         assertEquals(0, intList.size());
         assertTrue(intList.isEmpty());
@@ -29,7 +29,7 @@ class ArrayListTest {
 
     @Test
     void testConstructorInitialCapacity() {
-        ArrayList<Integer> intList = new ArrayList<>(20);
+        MyArrayList<Integer> intList = new MyArrayList<>(20);
 
         assertEquals(0, intList.size());
         assertTrue(intList.isEmpty());
@@ -38,7 +38,7 @@ class ArrayListTest {
     @Test
     void testConstructorWithCollection() {
         List<String> source = List.of("A", "B", "C");
-        ArrayList<String> newList = new ArrayList<>(source);
+        MyArrayList<String> newList = new MyArrayList<>(source);
 
         assertEquals(3, newList.size());
         assertEquals("A", newList.get(0));
@@ -48,7 +48,7 @@ class ArrayListTest {
 
     @Test
     void testConstructorWithEmptyCollection() {
-        ArrayList<String> newList = new ArrayList<>(Collections.emptyList());
+        MyArrayList<String> newList = new MyArrayList<>(Collections.emptyList());
 
         assertEquals(0, newList.size());
         assertTrue(newList.isEmpty());

@@ -3,8 +3,8 @@ package me.johannes.autumn.controller;
 import javafx.scene.image.PixelReader;
 import javafx.scene.paint.Color;
 
-import me.johannes.autumn.model.ArrayList;
-import me.johannes.autumn.model.HashTable;
+import me.johannes.autumn.model.MyArrayList;
+import me.johannes.autumn.model.MyHashtable;
 import me.johannes.autumn.model.PixelNode;
 import me.johannes.autumn.model.UnionFind;
 
@@ -15,13 +15,13 @@ import java.util.List;
  */
 public class NodeController {
     // hashtable to store pixel nodes
-    private final HashTable<Integer, PixelNode> nodes;
+    private final MyHashtable<Integer, PixelNode> nodes;
 
     // union-find data structure
     private final UnionFind uf;
 
     public NodeController(int size) {
-        nodes = new HashTable<>();
+        nodes = new MyHashtable<>();
         uf = new UnionFind(Math.max(size, 0));
     }
 
@@ -93,7 +93,7 @@ public class NodeController {
     }
 
     public List<PixelNode> getNodes() {
-        List<PixelNode> nodes = new ArrayList<>();
+        List<PixelNode> nodes = new MyArrayList<>();
 
         for (PixelNode node : this.nodes.values()) {
             if (node != null && node.isValid()) {

@@ -3,22 +3,22 @@ package me.johannes.autumn.model;
 import java.util.*;
 
 @SuppressWarnings("unchecked")
-public class ArrayList<T> implements List<T> {
+public class MyArrayList<T> implements List<T> {
 
     private T[] data;
     private int size;
     private static final int INITIAL_CAPACITY = 10;
 
-    public ArrayList(int initialCapacity) {
+    public MyArrayList(int initialCapacity) {
         data = (T[]) new Object[initialCapacity];
         size = 0;
     }
 
-    public ArrayList() {
+    public MyArrayList() {
         this(INITIAL_CAPACITY);
     }
 
-    public ArrayList(Collection<? extends T> collection) {
+    public MyArrayList(Collection<? extends T> collection) {
         Object[] array = collection.toArray();
         size = array.length;
 
@@ -361,7 +361,7 @@ public class ArrayList<T> implements List<T> {
             @Override
             public void remove() {
                 if (lastReturned < 0) throw new IllegalStateException();
-                ArrayList.this.remove(lastReturned);
+                MyArrayList.this.remove(lastReturned);
                 cursor = lastReturned;
                 lastReturned = -1;
             }
@@ -369,12 +369,12 @@ public class ArrayList<T> implements List<T> {
             @Override
             public void set(T t) {
                 if (lastReturned < 0) throw new IllegalStateException();
-                ArrayList.this.set(lastReturned, t);
+                MyArrayList.this.set(lastReturned, t);
             }
 
             @Override
             public void add(T t) {
-                ArrayList.this.add(cursor++, t);
+                MyArrayList.this.add(cursor++, t);
                 lastReturned = -1;
             }
         };
@@ -387,7 +387,7 @@ public class ArrayList<T> implements List<T> {
             throw new IndexOutOfBoundsException("fromIndex: " + fromIndex + ", toIndex: " + toIndex + ", Size: " + size);
         }
 
-        ArrayList<T> subList = new ArrayList<>(toIndex - fromIndex);
+        MyArrayList<T> subList = new MyArrayList<>(toIndex - fromIndex);
         subList.addAll(Arrays.asList(data).subList(fromIndex, toIndex));
 
         return subList;

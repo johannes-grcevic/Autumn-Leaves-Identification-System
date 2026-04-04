@@ -12,7 +12,7 @@ import javafx.scene.shape.Path;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 
-import me.johannes.autumn.model.ArrayList;
+import me.johannes.autumn.model.MyArrayList;
 import me.johannes.autumn.model.NearestNeighbor;
 
 import java.util.List;
@@ -42,7 +42,7 @@ public class AnimatedPathController {
         List<Point2D> shortestPath = nn.findShortestPath(start);
 
         // get all the rectangles in the target pane
-        List<Rectangle> unordered = new ArrayList<>();
+        List<Rectangle> unordered = new MyArrayList<>();
 
         for (Node node : target.getChildren()) {
             if (node instanceof Rectangle rectangle) {
@@ -52,8 +52,8 @@ public class AnimatedPathController {
 
         // get all the rectangles in the target pane
         // sort rectangles to match the order of the path points by matching centers
-        List<Rectangle> rectangles = new ArrayList<>(shortestPath.size());
-        List<Rectangle> remaining = new ArrayList<>(unordered);
+        List<Rectangle> rectangles = new MyArrayList<>(shortestPath.size());
+        List<Rectangle> remaining = new MyArrayList<>(unordered);
 
         for (Point2D current : shortestPath) {
             Rectangle nearestRect = null;
