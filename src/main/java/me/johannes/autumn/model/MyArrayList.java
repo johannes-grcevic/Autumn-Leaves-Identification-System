@@ -41,6 +41,7 @@ public class MyArrayList<T> implements List<T> {
 
         data[size] = element;
         size++;
+
         return true;
     }
 
@@ -111,13 +112,18 @@ public class MyArrayList<T> implements List<T> {
     private void ensureCapacity(int minCapacity) {
         if (minCapacity > data.length) {
             int oldCapacity = data.length;
+
+            // double the capacity of the array
             int newCapacity = oldCapacity + (oldCapacity >> 1);
+
             if (newCapacity < minCapacity) {
                 newCapacity = minCapacity;
             }
+
             if (newCapacity < INITIAL_CAPACITY) {
                 newCapacity = INITIAL_CAPACITY;
             }
+
             data = Arrays.copyOf(data, newCapacity);
         }
     }
@@ -150,6 +156,7 @@ public class MyArrayList<T> implements List<T> {
                 return true;
             }
         }
+
         return false;
     }
 
@@ -157,6 +164,7 @@ public class MyArrayList<T> implements List<T> {
     @Override
     public boolean removeAll(Collection<?> collection) {
         boolean modified = false;
+
         for (int i = 0; i < size; i++) {
             if (collection.contains(data[i])) {
                 remove(i);
@@ -164,6 +172,7 @@ public class MyArrayList<T> implements List<T> {
                 modified = true;
             }
         }
+
         return modified;
     }
 
@@ -173,6 +182,7 @@ public class MyArrayList<T> implements List<T> {
         if (index < 0 || index >= size) {
             throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + size);
         }
+
         return data[index];
     }
 
@@ -231,6 +241,7 @@ public class MyArrayList<T> implements List<T> {
                 return true;
             }
         }
+
         return false;
     }
 
@@ -242,6 +253,7 @@ public class MyArrayList<T> implements List<T> {
                 return false;
             }
         }
+
         return true;
     }
 
@@ -264,13 +276,15 @@ public class MyArrayList<T> implements List<T> {
     @Override
     public <E> E[] toArray(E[] array) {
         if (array.length < size) {
-            // If array is too small, allocate array new one of the same runtime type
+            // if the array is too small, allocate a new one of the same type
             return (E[]) Arrays.copyOf(data, size, array.getClass());
         }
+
         System.arraycopy(data, 0, array, 0, size);
         if (array.length > size) {
             array[size] = null;
         }
+
         return array;
     }
 
@@ -284,6 +298,7 @@ public class MyArrayList<T> implements List<T> {
     @Override
     public boolean retainAll(Collection<?> collection) {
         boolean modified = false;
+
         for (int i = 0; i < size; i++) {
             if (!collection.contains(data[i])) {
                 remove(i);
@@ -291,6 +306,7 @@ public class MyArrayList<T> implements List<T> {
                 modified = true;
             }
         }
+
         return modified;
     }
 
@@ -302,6 +318,7 @@ public class MyArrayList<T> implements List<T> {
                 return i;
             }
         }
+
         return -1;
     }
 
@@ -313,6 +330,7 @@ public class MyArrayList<T> implements List<T> {
                 return i;
             }
         }
+
         return -1;
     }
 
@@ -328,6 +346,7 @@ public class MyArrayList<T> implements List<T> {
         if (index < 0 || index > size) {
             throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + size);
         }
+
         return new ListIterator<>() {
             private int cursor = index;
             private int lastReturned = -1;
@@ -338,7 +357,9 @@ public class MyArrayList<T> implements List<T> {
             @Override
             public T next() {
                 if (!hasNext()) throw new NoSuchElementException();
+
                 lastReturned = cursor;
+
                 return data[cursor++];
             }
 
@@ -348,7 +369,9 @@ public class MyArrayList<T> implements List<T> {
             @Override
             public T previous() {
                 if (!hasPrevious()) throw new NoSuchElementException();
+
                 lastReturned = --cursor;
+
                 return data[cursor];
             }
 
@@ -361,7 +384,9 @@ public class MyArrayList<T> implements List<T> {
             @Override
             public void remove() {
                 if (lastReturned < 0) throw new IllegalStateException();
+
                 MyArrayList.this.remove(lastReturned);
+
                 cursor = lastReturned;
                 lastReturned = -1;
             }
@@ -409,6 +434,7 @@ public class MyArrayList<T> implements List<T> {
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
+
                 return data[currentIndex++];
             }
         };

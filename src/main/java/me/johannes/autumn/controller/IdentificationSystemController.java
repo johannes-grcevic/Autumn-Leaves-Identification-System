@@ -352,7 +352,7 @@ public class IdentificationSystemController implements Initializable {
     }
 
     protected void onColorPickerClosed(Event event) {
-        if (!isImageLoaded()) return;
+        if (!isImageLoaded() || !hasColorsSelected()) return;
 
         if (nodeController.hasNodes()) {
             nodeController.clearNodes();
