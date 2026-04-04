@@ -196,6 +196,7 @@ public class MyHashtable<K, V> implements Iterable<MyHashtable.Entry<K, V>> {
         return findKeyIndex(key) != -1;
     }
 
+    // returns a collection of all keys in the table
     public Collection<K> keys() {
         Collection<K> keys = Collections.synchronizedCollection(new MyArrayList<>());
 
@@ -208,6 +209,7 @@ public class MyHashtable<K, V> implements Iterable<MyHashtable.Entry<K, V>> {
         return keys;
     }
 
+    // returns a collection of all values in the table
     public Collection<V> values() {
         Collection<V> values = Collections.synchronizedCollection(new MyArrayList<>());
 
@@ -218,6 +220,19 @@ public class MyHashtable<K, V> implements Iterable<MyHashtable.Entry<K, V>> {
         }
 
         return values;
+    }
+
+    // returns a collection of all entries in the table
+    public Collection<Entry<K, V>> entries() {
+        Collection<Entry<K, V>> entries = Collections.synchronizedCollection(new MyArrayList<>());
+
+        for (Entry<K, V> entry : table) {
+            if (entry != null) {
+                entries.add(entry);
+            }
+        }
+
+        return entries;
     }
 
     // removes all entries from the table

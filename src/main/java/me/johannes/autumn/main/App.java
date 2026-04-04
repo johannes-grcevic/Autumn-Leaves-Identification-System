@@ -1,8 +1,6 @@
 package me.johannes.autumn.main;
 
 import javafx.application.Application;
-import javafx.collections.FXCollections;
-import javafx.css.Stylesheet;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -17,6 +15,8 @@ import java.util.Objects;
  * JavaFX Autumn Leaves Identification System
  */
 public class App extends Application {
+    private static Image iconImage;
+
     @Override
     public void start(Stage stage) throws IOException {
         // set up the main scene
@@ -32,7 +32,8 @@ public class App extends Application {
         stage.show();
 
         // set the application icon
-        stage.getIcons().add(new Image(Objects.requireNonNull(getResource("icon.png")).toExternalForm(), 64, 64, true, true));
+        iconImage = new Image(Objects.requireNonNull(getResource("icon.png")).toExternalForm(), 64, 64, true, true);
+        stage.getIcons().add(iconImage);
     }
 
     // load an FXML file
@@ -48,6 +49,10 @@ public class App extends Application {
 
     public static String getStylesheet(String filename) {
         return getResource(filename + ".css").toExternalForm();
+    }
+
+    public static Image getIconImage() {
+        return iconImage;
     }
 
     // start the application
