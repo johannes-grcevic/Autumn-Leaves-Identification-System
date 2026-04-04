@@ -2,55 +2,51 @@ package model;
 
 import javafx.geometry.Point2D;
 
-public record PixelNode(int root, ArrayList<Integer> pixels, int minSize, int capacity, int imageWidth) {
-    public PixelNode(int root, int minSize, int capacity, int imageWidth) {
-        this(root, new ArrayList<>(capacity), minSize, capacity, imageWidth);
+public record PixelNode(int root, ArrayList<Integer> indexes, int minSize, int imageWidth) {
+
+    public static final PixelNode EMPTY = new PixelNode(-1, 0, 0);
+
+    // constructor for creating a new node
+    public PixelNode(int root, int minSize, int imageWidth) {
+        this(root, new ArrayList<>(), minSize, imageWidth);
     }
 
-    public void addPixel(int index) {
-        pixels.add(index);
+    public void addIndex(int value) {
+        indexes.add(value);
     }
 
     public int getRoot() {
         return root;
     }
 
-    public int getMinSize() {
-        return minSize;
-    }
-
     public int getPixelCount() {
-        return pixels.size();
+        return indexes.size();
     }
 
     public Point2D getCenter() {
         double sumX = 0;
         double sumY = 0;
 
-        for (int pixel : pixels) {
-            int x = pixel % imageWidth;
-            int y = pixel / imageWidth;
+        for (int index : indexes) {
+            int x = index % imageWidth;
+            int y = index / imageWidth;
             sumX += x;
             sumY += y;
         }
 
-        int count = pixels.size();
+        int count = indexes.size();
         return new Point2D(sumX / count, sumY / count);
     }
 
-    public static PixelNode getEmpty() {
-        return new PixelNode(-1, 0, 0, 0);
-    }
-
     public boolean isValid() {
-        return root >= 0 && !isEmpty() && pixels.size() >= minSize;
+        return root >= 0 && !isEmpty() && indexes.size() >= minSize;
     }
 
     public boolean isEmpty() {
-        return pixels.isEmpty();
+        return indexes.isEmpty();
     }
 
     public void clear() {
-        pixels.clear();
+        indexes.clear();
     }
 }

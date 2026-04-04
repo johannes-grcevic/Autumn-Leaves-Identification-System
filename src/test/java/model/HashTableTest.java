@@ -86,9 +86,9 @@ class HashTableTest {
         table.remove("B");
         assertEquals(2, table.size());
         assertNull(table.get("B"));
-        assertTrue(table.contains("A"));
-        assertTrue(table.contains("C"));
-        assertFalse(table.contains("B"));
+        assertTrue(table.containsKey("A"));
+        assertTrue(table.containsKey("C"));
+        assertFalse(table.containsKey("B"));
 
         // Removing non-existent key should not change size or throw error
         table.remove("X");
@@ -115,14 +115,14 @@ class HashTableTest {
     }
 
     @Test
-    void testContains() {
-        assertFalse(table.contains("A"));
+    void testContainsKey() {
+        assertFalse(table.containsKey("A"));
 
         table.put("A", 1);
-        assertTrue(table.contains("A"));
+        assertTrue(table.containsKey("A"));
 
         table.remove("A");
-        assertFalse(table.contains("A"));
+        assertFalse(table.containsKey("A"));
     }
 
     @Test

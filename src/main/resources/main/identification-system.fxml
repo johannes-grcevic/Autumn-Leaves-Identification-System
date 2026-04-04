@@ -40,7 +40,7 @@
                   </Menu>
               </menus>
             </MenuBar>
-            <Label fx:id="statusLabel" alignment="CENTER" layoutX="333.0" layoutY="50.0" prefHeight="28.0" prefWidth="614.0" text="No Image Loaded!" textAlignment="CENTER">
+            <Label fx:id="statusLabel" alignment="TOP_CENTER" contentDisplay="CENTER" layoutX="333.0" layoutY="50.0" prefHeight="112.0" prefWidth="614.0" styleClass="statusLabel" stylesheets="@style.css" textAlignment="CENTER" wrapText="true">
                <font>
                   <Font size="19.0" />
                </font>

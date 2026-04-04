@@ -1,13 +1,12 @@
 package model;
 
 import javafx.geometry.Point2D;
-import java.util.List;
 
 public class NearestNeighbor {
     private final ArrayList<Point2D> points;
 
-    public NearestNeighbor(Point2D[] points) {
-        this.points = new ArrayList<>(List.of(points));
+    public NearestNeighbor(ArrayList<Point2D> points) {
+        this.points = points;
     }
 
     // find the shortest path from the start point to all other points

@@ -1,7 +1,6 @@
 package model;
 
-import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 @SuppressWarnings("unchecked")
 public class HashTable<K, V> implements Iterable<HashTable.Entry<K, V>> {
@@ -30,7 +29,7 @@ public class HashTable<K, V> implements Iterable<HashTable.Entry<K, V>> {
 
     public HashTable(int initialCapacity) {
         if (initialCapacity <= 0) {
-            throw new IllegalArgumentException("Initial capacity must be greater than 0");
+            throw new IllegalArgumentException("Initial capacity must be greater than 0.");
         }
 
         this.capacity = initialCapacity;
@@ -46,7 +45,7 @@ public class HashTable<K, V> implements Iterable<HashTable.Entry<K, V>> {
     // returns the index of an existing key, or -1 if not found
     private int findKeyIndex(K key) {
         if (key == null) {
-            throw new NullPointerException("Key cannot be null");
+            throw new NullPointerException("Key cannot be null.");
         }
 
         int index = Math.floorMod(key.hashCode(), capacity);
@@ -70,7 +69,7 @@ public class HashTable<K, V> implements Iterable<HashTable.Entry<K, V>> {
     // prefers a tombstone, otherwise uses the first empty slot
     private int findInsertIndex(K key) {
         if (key == null) {
-            throw new NullPointerException("Key cannot be null");
+            throw new NullPointerException("Key cannot be null.");
         }
 
         int index = Math.floorMod(key.hashCode(), capacity);
@@ -94,7 +93,7 @@ public class HashTable<K, V> implements Iterable<HashTable.Entry<K, V>> {
 
         // No empty slot was found.
         // If we saw a tombstone, reuse it; otherwise signal failure.
-        return firstDeleted != -1 ? firstDeleted : -1;
+        return firstDeleted;
     }
 
     // makes the table bigger when it gets too full,
@@ -193,8 +192,40 @@ public class HashTable<K, V> implements Iterable<HashTable.Entry<K, V>> {
     }
 
     // checks if a key is in the table
-    public boolean contains(K key) {
+    public boolean containsKey(K key) {
         return findKeyIndex(key) != -1;
+    }
+
+    public Collection<K> keys() {
+        Collection<K> keys = new ArrayList<>();
+
+        for (Entry<K, V> entry : table) {
+            if (entry != null) {
+                keys.add(entry.key);
+            }
+        }
+
+        return keys;
+    }
+
+    public ArrayList<V> values() {
+        ArrayList<V> values = new ArrayList<>();
+
+        for (Entry<K, V> entry : table) {
+            if (entry != null) {
+                values.add(entry.value);
+            }
+        }
+
+        return values;
+    }
+
+    public void clear() {
+        for (int i = 0; i < capacity; i++) {
+            table[i] = null;
+        }
+        size = 0;
+        tombstones = 0;
     }
 
     @Override

@@ -31,9 +31,7 @@ import util.ImageUtils;
 
 import java.io.File;
 import java.net.URL;
-import java.util.Objects;
-import java.util.Random;
-import java.util.ResourceBundle;
+import java.util.*;
 
 import static util.FXUtils.showAlert;
 import static util.FXUtils.showConfirmationAlert;
@@ -56,7 +54,6 @@ public class IdentificationSystemController implements Initializable {
     private final ContextMenu nodeContextMenu;
     private final MenuItem addToColorPickerMenuItem;
 
-    private Pane imagePane;
     private File imageFile;
     private WritableImage displayedImage;
     private WritableImage displayBlackAndWhiteImage;
@@ -69,10 +66,12 @@ public class IdentificationSystemController implements Initializable {
     private PixelNode clickedNode;
     private PixelNode selectedNode;
 
-    private final Random randomGenerator = new Random();
+    private final Random RANDOM_GENERATOR = new Random();
 
     private final int MIN_NODE_SIZE;
     private final int MAX_CUSTOM_COLORS;
+    private final double HOVER_SCALE_FACTOR;
+    private final Duration HOVER_DURATION_MILLISECONDS;
 
     private final String ALERT_NO_IMAGE_LOADED;
     private final String ALERT_NO_COLORS_SELECTED;
@@ -83,6 +82,10 @@ public class IdentificationSystemController implements Initializable {
         MIN_NODE_SIZE = 55;
         // the maximum number of custom colors that can be selected by the user
         MAX_CUSTOM_COLORS = 120;
+        // the scale factor for buttons when hovered over
+        HOVER_SCALE_FACTOR = 1.03;
+        // the duration of the button hover effect in milliseconds
+        HOVER_DURATION_MILLISECONDS = Duration.millis(200);
 
         ALERT_NO_IMAGE_LOADED = "Open an Image to get started!";
         ALERT_NO_COLORS_SELECTED = "No Colors Selected!";
@@ -123,8 +126,9 @@ public class IdentificationSystemController implements Initializable {
         String imageURL = String.valueOf(imageFile.toURI());
 
         // set the image dimensions based on the image center pane size
-        fixedWidth = (int) imagePane.getWidth();
-        fixedHeight = (int) imagePane.getHeight();
+        Pane imageContainer = (Pane) borderPane.getCenter();
+        fixedWidth = (int) imageContainer.getWidth();
+        fixedHeight = (int) imageContainer.getHeight();
 
         // resize the original image to fit the center pane
         Image originalColorImage = new Image(imageURL, fixedWidth, fixedHeight, false, false);
@@ -137,17 +141,17 @@ public class IdentificationSystemController implements Initializable {
         initializeNodeController(fixedWidth * fixedHeight);
 
         // disable the interactive features of the app until the image is loaded
-        setButtonControlsActive(true);
+        setClickableControlsActive(true);
     }
 
     @FXML
     private void showBlackAndWhite() {
-        if (!isImageFileLoaded()) {
+        if (!isImageLoaded()) {
             showAlert(ALERT_NO_IMAGE_LOADED, AlertType.ERROR);
             return;
         }
 
-        if (!hasCustomColorsSelected()) {
+        if (!hasCustomColors()) {
             showAlert(ALERT_NO_COLORS_SELECTED, AlertType.ERROR);
             return;
         }
@@ -159,22 +163,23 @@ public class IdentificationSystemController implements Initializable {
 
     @FXML
     private void showRandomColors() {
-        if (!isImageFileLoaded()) {
+        if (!isImageLoaded()) {
             showAlert(ALERT_NO_IMAGE_LOADED, AlertType.ERROR);
             return;
         }
 
-        if (!hasCustomColorsSelected()) {
+        if (!hasCustomColors()) {
             showAlert(ALERT_NO_COLORS_SELECTED, AlertType.ERROR);
             return;
         }
 
+        if (displayBlackAndWhiteImage == null) return;
+
         WritableImage randomColoredImage = new WritableImage(displayBlackAndWhiteImage.getPixelReader(), fixedWidth, fixedHeight);
+        ArrayList<PixelNode> nodes = nodeController.getNodes();
 
-        PixelNode[] validNodes = nodeController.getNodes();
-
-        for (PixelNode node : validNodes) {
-            Color randomColor = ColorUtils.getRandomColor(randomGenerator);
+        for (PixelNode node : nodes) {
+            Color randomColor = ColorUtils.getRandomColor(RANDOM_GENERATOR);
             setNodePixelColor(randomColoredImage, node, randomColor);
         }
 
@@ -185,12 +190,12 @@ public class IdentificationSystemController implements Initializable {
 
     @FXML
     private void showNodeBounds() {
-        if (!isImageFileLoaded()) {
+        if (!isImageLoaded()) {
             showAlert(ALERT_NO_IMAGE_LOADED, AlertType.ERROR);
             return;
         }
 
-        if (!hasCustomColorsSelected()) {
+        if (!hasCustomColors()) {
             showAlert(ALERT_NO_COLORS_SELECTED, AlertType.ERROR);
             return;
         }
@@ -200,7 +205,7 @@ public class IdentificationSystemController implements Initializable {
 
         // draw node boundary rectangles
         NodeBoundsController controller = new NodeBoundsController(drawPane, nodeController.getNodes(), fixedWidth, fixedHeight);
-        controller.drawNodeBounds(Color.BLACK, Color.BLUE, 8, 2, null);
+        controller.drawNodeBounds(Color.BLACK, Color.BLUE, 8, 0.5, null);
 
         // display the bound popup window
         Stage stage = FXUtils.showPopupWindow("Bounds | Press 'N' for numbering", drawPane, drawPane.getPrefWidth(), drawPane.getPrefHeight(), false);
@@ -210,21 +215,21 @@ public class IdentificationSystemController implements Initializable {
 
     @FXML
     private void showAnimatedConnectingPath() {
-        if (!isImageFileLoaded()) {
+        if (!isImageLoaded()) {
             showAlert(ALERT_NO_IMAGE_LOADED, AlertType.ERROR);
             return;
         }
 
-        if (!hasCustomColorsSelected()) {
+        if (!hasCustomColors()) {
             showAlert(ALERT_NO_COLORS_SELECTED, AlertType.ERROR);
             return;
         }
 
-        PixelNode[] validNodes = nodeController.getNodes();
-        Point2D[] nodeCenterPoints = new Point2D[validNodes.length];
+        ArrayList<PixelNode> nodes = nodeController.getNodes();
+        ArrayList<Point2D> centerPoints = new ArrayList<>(nodes.size());
 
-        for (int i = 0; i < validNodes.length; i++) {
-            nodeCenterPoints[i] = validNodes[i].getCenter();
+        for (int i = 0; i < nodes.size(); i++) {
+            centerPoints.add(nodes.get(i).getCenter());
         }
 
         if (selectedNode == null) {
@@ -240,14 +245,14 @@ public class IdentificationSystemController implements Initializable {
         stage.getScene().getStylesheets().add(Objects.requireNonNull(App.class.getResource("style.css")).toExternalForm());
 
         // initialize the node bounds controller
-        NodeBoundsController boundsController = new NodeBoundsController(drawPane, validNodes, fixedWidth, fixedHeight);
-        boundsController.setTargetScene(stage.getScene());
+        NodeBoundsController controller = new NodeBoundsController(drawPane, nodes, fixedWidth, fixedHeight);
+        controller.setTargetScene(stage.getScene());
 
         // draw node boundary rectangles
-        boundsController.drawNodeBounds(Color.BLACK, Color.BLUE, 8, 2, null);
+        controller.drawNodeBounds(Color.BLACK, Color.BLUE, 8, 2, null);
 
         // draw the connecting path
-        AnimatedPathController pathController = new AnimatedPathController(nodeCenterPoints);
+        AnimatedPathController pathController = new AnimatedPathController(centerPoints);
         pathController.drawAnimatedPath(selectedNode.getCenter(), drawPane, Duration.seconds(5), Color.RED, 1);
 
         // clear the current selection from the displayed image
@@ -255,25 +260,25 @@ public class IdentificationSystemController implements Initializable {
     }
 
     @FXML
-    private void clearColorSelection() {
+    public void clearColorSelection() {
         colorPicker.getCustomColors().clear();
         colorPicker.setValue(Color.WHITE);
 
+        if (!isImageLoaded()) return;
         // show the filename on the status bar
-        if (!isImageFileLoaded()) return;
         setStatusBar("File: " + imageFile.getName(), true);
     }
 
     @FXML
     private void clearImage() {
-        if (!isImageFileLoaded()) return;
+        if (!isImageLoaded()) return;
 
         // Only clear the image if the user selects ok
-        if (!showConfirmationAlert("Are you sure you want to clear the loaded image?").equals(ButtonType.OK))
+        if (!showConfirmationAlert("Are you sure you want to clear the Image?").equals(ButtonType.OK))
             return;
 
         // clear image data
-        if (nodeController != null) {
+        if (nodeController != null && nodeController.hasNodes()) {
             nodeController.clearNodes();
         }
 
@@ -294,7 +299,7 @@ public class IdentificationSystemController implements Initializable {
         selectedNode = null;
 
         setStatusBar(ALERT_NO_IMAGE_LOADED, true);
-        setButtonControlsActive(false);
+        setClickableControlsActive(false);
 
         // clear the color selection
         clearColorSelection();
@@ -312,14 +317,11 @@ public class IdentificationSystemController implements Initializable {
 
     // Events //
     protected void onImageChanged(ObservableValue<?> value, Image oldValue, Image newValue) {
-        if (!isImageFileLoaded()) return;
+        if (!isImageLoaded()) return;
 
         if (newValue != null && !newValue.isError()) {
             // show the filename on the status bar
             setStatusBar("File: " + imageFile.getName(), true);
-
-            // hide the border after the image is loaded
-            imagePane.setBorder(null);
 
             // clear the color picker after loading a new image
             clearColorSelection();
@@ -327,11 +329,9 @@ public class IdentificationSystemController implements Initializable {
     }
 
     protected void onColorPickerClosed(Event event) {
-        if (!isImageFileLoaded() || !hasCustomColorsSelected()) return;
+        if (!isImageLoaded()) return;
 
         createNodesFromImage(displayedImage);
-
-        // show the number of nodes on the status bar
         setStatusBar("Leaf Count: " + nodeController.getNodeCount(), true);
 
         // refocus the main application window after the color picker is closed
@@ -345,47 +345,42 @@ public class IdentificationSystemController implements Initializable {
     }
 
     protected void onCustomColorsListChanged(ListChangeListener.Change<?> newValue) {
-        if (!isImageFileLoaded() || newValue.getList().isEmpty() || !hasCustomColorsSelected()) return;
+        if (!isImageLoaded() || newValue == null) return;
 
         // check if the user has selected more than the maximum number of custom colors
         if (newValue.getList().size() > MAX_CUSTOM_COLORS) {
             showAlert("You can only select up to " + MAX_CUSTOM_COLORS + " custom colors!", AlertType.ERROR);
-            colorPicker.getCustomColors().remove(newValue.getList().size() - 1);
+
+            // remove the last custom color from the list to prevent the user from selecting more colors
+            // this prevents the user from adding more colors than is allowed for the color picker
+            newValue.getList().removeLast();
+
+            // close the color picker menu to allow the alert to show on top
             colorPicker.toBack();
             colorPicker.hide();
-            return;
-        }
-
-        if (newValue.getList().size() <= MAX_CUSTOM_COLORS) {
-            if (nodeController.getNodeCount() == 0) {
-                createNodesFromImage(displayedImage);
-            }
-
-            // show the number of nodes on the status bar
-            setStatusBar("Leaf Count: " + nodeController.getNodeCount(), true);
         }
     }
 
     protected void onAutoSelectButtonClicked(ActionEvent event) {
-        if (!isImageFileLoaded()) return;
+        if (!isImageLoaded()) return;
 
         autoSelectColors();
-
-        if (nodeController.getNodeCount() == 0) {
-            createNodesFromImage(displayedImage);
-        }
+        createNodesFromImage(displayedImage);
+        setStatusBar("Leaf Count: " + nodeController.getNodeCount(), true);
     }
 
     protected void onImageViewMouseClicked(MouseEvent event) {
-        if (!isImageFileLoaded() || displayedImage == null || nodeController == null) {
+        if (!isImageLoaded() || displayedImage == null || nodeController == null) {
             return;
         }
 
         // get the clicked position in the image
         Point2D clickPosition = imageView.screenToLocal(event.getScreenX(), event.getScreenY());
+        int x = (int) clickPosition.getX();
+        int y = (int) clickPosition.getY();
 
         // set the current clicked node
-        clickedNode = nodeController.getNode(imageView.getImage(), clickPosition);
+        clickedNode = nodeController.getNode(x, y, fixedWidth, fixedHeight);
 
         // when the left mouse button is pressed, select the clicked node
         if (event.getButton() == MouseButton.PRIMARY) {
@@ -425,9 +420,9 @@ public class IdentificationSystemController implements Initializable {
     protected void onAddToColorPickerClicked(ActionEvent event) {
         if (selectedNode == null) return;
 
-        for (Integer pixel : selectedNode.pixels()) {
-            int x = pixel % fixedWidth;
-            int y = pixel / fixedWidth;
+        for (Integer index : selectedNode.indexes()) {
+            int x = index % fixedWidth;
+            int y = index / fixedWidth;
 
             Color pixelColor = unselectedImage.getPixelReader().getColor(x, y);
             addCustomColor(pixelColor);
@@ -452,9 +447,9 @@ public class IdentificationSystemController implements Initializable {
     public void setNodePixelColor(WritableImage source, PixelNode node, Color color) {
         PixelWriter writer = source.getPixelWriter();
 
-        for (Integer pixel : node.pixels()) {
-            int x = pixel % fixedWidth;
-            int y = pixel / fixedWidth;
+        for (Integer index : node.indexes()) {
+            int x = index % fixedWidth;
+            int y = index / fixedWidth;
 
             writer.setColor(x, y, color);
         }
@@ -494,7 +489,7 @@ public class IdentificationSystemController implements Initializable {
 
     public void autoSelectColors() {
         // clear the current selection
-        if (!getCustomColors().isEmpty()) {
+        if (!colorPicker.getCustomColors().isEmpty()) {
             clearColorSelection();
         }
 
@@ -508,6 +503,8 @@ public class IdentificationSystemController implements Initializable {
             for (int y = 0; y < fixedHeight; y++) {
                 Color pixelColor = reader.getColor(x, y);
 
+                if (pixelColor == null) continue;
+
                 // add the color to the color picker if it is an autumn leaf
                 if (ImageUtils.isAutumnLeaf(pixelColor)) {
                     addCustomColor(pixelColor);
@@ -516,22 +513,15 @@ public class IdentificationSystemController implements Initializable {
         }
     }
 
-    public void initializeNodeController(int imageSize) {
-        nodeController = new NodeController(imageSize);
-    }
-
     public void createNodesFromImage(WritableImage source) {
         // black and white image based on user-selected colors
-        displayBlackAndWhiteImage = ImageUtils.getBlackAndWhite(source, getCustomColors().stream().toList(), 0.3, 0.2);
+        displayBlackAndWhiteImage = ImageUtils.getBlackAndWhite(source, colorPicker.getCustomColors(), 0.3, 0.2);
         PixelReader reader = displayBlackAndWhiteImage.getPixelReader();
 
-        // clear the node controller if it already has nodes
-        if (nodeController.getNodeCount() > 0) {
-            nodeController.clearNodes();
-        }
-
         // create clusters from the black and white image
-        nodeController.createNodes(fixedWidth, fixedHeight, MIN_NODE_SIZE, reader, Color.BLACK);
+        if (!nodeController.hasNodes()) {
+            nodeController.createNodes(fixedWidth, fixedHeight, MIN_NODE_SIZE, reader, Color.BLACK);
+        }
 
         // create a new black and white image with the processed pixels
         PixelWriter writer = displayBlackAndWhiteImage.getPixelWriter();
@@ -548,63 +538,48 @@ public class IdentificationSystemController implements Initializable {
         }
     }
 
-    public void setStatusBar(String message, boolean visible) {
-        statusLabel.setText(message);
-        statusLabel.setVisible(visible);
-    }
-
     public void addCustomColor(Color color) {
-        if (colorPicker.getCustomColors().size() >= MAX_CUSTOM_COLORS) return;
+        if (colorPicker.getCustomColors().size() >= MAX_CUSTOM_COLORS || color == null) return;
 
         if (!colorPicker.getCustomColors().contains(color)) {
             colorPicker.getCustomColors().add(color);
         }
     }
 
-    public ArrayList<Color> getCustomColors() {
-        ColorPicker picker = colorPicker;
-        ArrayList<Color> customColors = new ArrayList<>(picker.getCustomColors().size() + 1);
-
-        Color selectedColor = picker.getValue();
-
-        // add the selected color to the list
-        if (selectedColor != null && !selectedColor.equals(Color.WHITE)) {
-            customColors.add(selectedColor);
-        }
-
-        // add all custom colors from the color picker
-        customColors.addAll(picker.getCustomColors());
-
-        return customColors;
+    public boolean hasCustomColors() {
+        return !colorPicker.getCustomColors().isEmpty() && colorPicker.getValue().equals(Color.WHITE);
     }
 
-    public boolean hasCustomColorsSelected() {
-        ArrayList<Color> customColors = getCustomColors();
+    public void setStatusBar(String message, boolean visible) {
+        if (statusLabel == null) return;
 
-        if (colorPicker.getValue().equals(Color.WHITE)) return true;
-
-        for (Color color : customColors) {
-            if (!color.equals(Color.WHITE)) return true;
+        if (message.isBlank()) {
+            throw new IllegalArgumentException("Message cannot be blank!");
         }
 
-        return false;
+        String statusText = "\n" + message;
+
+        statusLabel.setText(statusText);
+        statusLabel.setVisible(visible);
     }
 
-    public void setButtonControlsActive(boolean value) {
+    public void setClickableControlsActive(boolean value) {
         autoSelectColorsButton.setDisable(!value);
         clearColorSelectionButton.setDisable(!value);
         colorPicker.setDisable(!value);
     }
 
-    public boolean isImageFileLoaded() {
+    public boolean isImageLoaded() {
         return imageFile != null;
+    }
+
+    public void initializeNodeController(int imageSize) {
+        nodeController = new NodeController(imageSize);
     }
 
     // Initialization //
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        imagePane = (Pane) borderPane.getCenter();
-
         colorPicker.getCustomColors().addListener(this::onCustomColorsListChanged);
         colorPicker.setOnHidden(this::onColorPickerClosed);
 
@@ -614,13 +589,12 @@ public class IdentificationSystemController implements Initializable {
         autoSelectColorsButton.setOnAction(this::onAutoSelectButtonClicked);
         addToColorPickerMenuItem.setOnAction(this::onAddToColorPickerClicked);
 
-        setButtonControlsActive(false);
-
         // add hover scale animation to the buttons
-        FXUtils.setHoverScaleAnimation(autoSelectColorsButton, 1.03, Duration.millis(200));
-        FXUtils.setHoverScaleAnimation(clearColorSelectionButton, 1.03, Duration.millis(200));
-        FXUtils.setHoverScaleAnimation(colorPicker, 1.03, Duration.millis(200));
+        FXUtils.setHoverScaleAnimation(autoSelectColorsButton, HOVER_SCALE_FACTOR, HOVER_DURATION_MILLISECONDS);
+        FXUtils.setHoverScaleAnimation(clearColorSelectionButton, HOVER_SCALE_FACTOR, HOVER_DURATION_MILLISECONDS);
+        FXUtils.setHoverScaleAnimation(colorPicker, HOVER_SCALE_FACTOR, HOVER_DURATION_MILLISECONDS);
 
+        setClickableControlsActive(false);
         setStatusBar(ALERT_NO_IMAGE_LOADED, true);
     }
 }

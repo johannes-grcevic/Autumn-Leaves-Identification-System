@@ -28,6 +28,7 @@ public class ArrayList<T> implements Iterable<T>, Collection<T> {
         else {
             // replace it with an empty array of initial capacity
             data = (T[]) new Object[INITIAL_CAPACITY];
+            size = 0;
         }
     }
 
@@ -70,6 +71,7 @@ public class ArrayList<T> implements Iterable<T>, Collection<T> {
         int numNew = array.length;
         ensureCapacity(size + numNew);
         System.arraycopy(array, 0, data, size, numNew);
+
         size += numNew;
         return true;
     }

@@ -21,7 +21,7 @@ public class AnimatedPathController {
     // nearest neighbor algorithm
     private final NearestNeighbor nn;
 
-    public AnimatedPathController(Point2D[] nodePoints) {
+    public AnimatedPathController(ArrayList<Point2D> nodePoints) {
         path = new Path();
         nn = new NearestNeighbor(nodePoints);
     }
