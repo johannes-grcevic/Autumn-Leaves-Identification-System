@@ -1,10 +1,10 @@
-package model;
+package me.johannes.autumn.model;
 
 import javafx.geometry.Point2D;
 
 import java.util.List;
 
-public record PixelNode(int root, List<Integer> indexes, int minSize, int imageWidth) {
+public record PixelNode(int root, List<Integer> pixelIndexes, int minSize, int imageWidth) {
 
     public static final PixelNode EMPTY = new PixelNode(-1, 0, 0);
 
@@ -13,8 +13,8 @@ public record PixelNode(int root, List<Integer> indexes, int minSize, int imageW
         this(root, new ArrayList<>(), minSize, imageWidth);
     }
 
-    public void addIndex(int value) {
-        indexes.add(value);
+    public void addPixelIndex(int value) {
+        pixelIndexes.add(value);
     }
 
     public int getRoot() {
@@ -22,33 +22,33 @@ public record PixelNode(int root, List<Integer> indexes, int minSize, int imageW
     }
 
     public int getPixelCount() {
-        return indexes.size();
+        return pixelIndexes.size();
     }
 
     public Point2D getCenter() {
         double sumX = 0;
         double sumY = 0;
 
-        for (int index : indexes) {
+        for (int index : pixelIndexes) {
             int x = index % imageWidth;
             int y = index / imageWidth;
             sumX += x;
             sumY += y;
         }
 
-        int count = indexes.size();
+        int count = pixelIndexes.size();
         return new Point2D(sumX / count, sumY / count);
     }
 
     public boolean isValid() {
-        return root >= 0 && !isEmpty() && indexes.size() >= minSize;
+        return root >= 0 && !isEmpty() && pixelIndexes.size() >= minSize;
     }
 
     public boolean isEmpty() {
-        return indexes.isEmpty();
+        return pixelIndexes.isEmpty();
     }
 
     public void clear() {
-        indexes.clear();
+        pixelIndexes.clear();
     }
 }

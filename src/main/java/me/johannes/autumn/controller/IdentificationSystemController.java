@@ -1,4 +1,4 @@
-package controller;
+package me.johannes.autumn.controller;
 
 import javafx.application.Platform;
 import javafx.beans.value.ObservableValue;
@@ -22,19 +22,19 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Duration;
 
-import main.App;
-import model.ArrayList;
-import model.PixelNode;
-import util.ColorUtils;
-import util.FXUtils;
-import util.ImageUtils;
+import me.johannes.autumn.main.App;
+import me.johannes.autumn.model.ArrayList;
+import me.johannes.autumn.model.PixelNode;
+import me.johannes.autumn.util.ColorUtils;
+import me.johannes.autumn.util.FXUtils;
+import me.johannes.autumn.util.ImageUtils;
 
 import java.io.File;
 import java.net.URL;
 import java.util.*;
 
-import static util.FXUtils.showAlert;
-import static util.FXUtils.showConfirmationAlert;
+import static me.johannes.autumn.util.FXUtils.showAlert;
+import static me.johannes.autumn.util.FXUtils.showConfirmationAlert;
 
 public class IdentificationSystemController implements Initializable {
     @FXML
@@ -420,7 +420,7 @@ public class IdentificationSystemController implements Initializable {
     protected void onAddToColorPickerClicked(ActionEvent event) {
         if (selectedNode == null) return;
 
-        for (Integer index : selectedNode.indexes()) {
+        for (Integer index : selectedNode.pixelIndexes()) {
             int x = index % fixedWidth;
             int y = index / fixedWidth;
 
@@ -447,7 +447,7 @@ public class IdentificationSystemController implements Initializable {
     public void setNodePixelColor(WritableImage source, PixelNode node, Color color) {
         PixelWriter writer = source.getPixelWriter();
 
-        for (Integer index : node.indexes()) {
+        for (Integer index : node.pixelIndexes()) {
             int x = index % fixedWidth;
             int y = index / fixedWidth;
 

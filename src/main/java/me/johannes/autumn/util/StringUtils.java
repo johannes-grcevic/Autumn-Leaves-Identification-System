@@ -1,4 +1,4 @@
-package util;
+package me.johannes.autumn.util;
 
 public class StringUtils {
     public static String capitalize(String str) {

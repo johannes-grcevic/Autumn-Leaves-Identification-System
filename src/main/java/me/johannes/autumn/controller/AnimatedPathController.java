@@ -1,4 +1,4 @@
-package controller;
+package me.johannes.autumn.controller;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -12,8 +12,8 @@ import javafx.scene.shape.Path;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 
-import model.ArrayList;
-import model.NearestNeighbor;
+import me.johannes.autumn.model.ArrayList;
+import me.johannes.autumn.model.NearestNeighbor;
 
 import java.util.List;
 

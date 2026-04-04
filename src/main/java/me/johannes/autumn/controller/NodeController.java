@@ -1,12 +1,12 @@
-package controller;
+package me.johannes.autumn.controller;
 
 import javafx.scene.image.PixelReader;
 import javafx.scene.paint.Color;
 
-import model.ArrayList;
-import model.HashTable;
-import model.PixelNode;
-import model.UnionFind;
+import me.johannes.autumn.model.ArrayList;
+import me.johannes.autumn.model.HashTable;
+import me.johannes.autumn.model.PixelNode;
+import me.johannes.autumn.model.UnionFind;
 
 import java.util.List;
 
@@ -69,11 +69,12 @@ public class NodeController {
                 }
 
                 // add pixels to each node
-                nodes.get(rootNode).addIndex(index);
+                nodes.get(rootNode).addPixelIndex(index);
             }
         }
 
         System.out.println("Nodes created: " + nodes.size());
+        System.out.println("Valid nodes: " + getNodeCount());
     }
 
     public PixelNode getNode(int x, int y, int width, int height) {

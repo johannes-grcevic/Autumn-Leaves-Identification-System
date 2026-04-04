@@ -1,4 +1,4 @@
-package model;
+package me.johannes.autumn.model;
 
 import javafx.geometry.Point2D;
 

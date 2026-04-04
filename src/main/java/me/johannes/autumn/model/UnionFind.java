@@ -1,4 +1,4 @@
-package model;
+package me.johannes.autumn.model;
 
 public class UnionFind {
     private final int[] parent;

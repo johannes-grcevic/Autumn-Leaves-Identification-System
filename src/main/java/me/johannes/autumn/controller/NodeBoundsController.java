@@ -1,4 +1,4 @@
-package controller;
+package me.johannes.autumn.controller;
 
 import javafx.geometry.Point2D;
 import javafx.scene.Scene;
@@ -10,11 +10,11 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeType;
 import javafx.scene.text.Text;
 
-import model.Bounds;
-import model.PixelNode;
-import model.ArrayList;
+import me.johannes.autumn.model.Bounds;
+import me.johannes.autumn.model.PixelNode;
+import me.johannes.autumn.model.ArrayList;
 
-import util.ArrayUtils;
+import me.johannes.autumn.util.ArrayUtils;
 
 import java.util.List;
 
@@ -41,7 +41,7 @@ public class NodeBoundsController {
         }
 
         for (int i = 0; i < nodes.size(); i++) {
-            List<Integer> indexes = nodes.get(i).indexes();
+            List<Integer> indexes = nodes.get(i).pixelIndexes();
 
             for (Integer index : indexes) {
                 int x = index % (int) width;

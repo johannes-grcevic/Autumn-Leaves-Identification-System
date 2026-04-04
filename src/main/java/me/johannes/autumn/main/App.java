@@ -1,4 +1,4 @@
-package main;
+package me.johannes.autumn.main;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;

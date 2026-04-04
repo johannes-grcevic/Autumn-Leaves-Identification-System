@@ -1,4 +1,4 @@
-package util;
+package me.johannes.autumn.util;
 
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;

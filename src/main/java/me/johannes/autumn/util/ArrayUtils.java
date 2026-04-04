@@ -1,4 +1,4 @@
-package util;
+package me.johannes.autumn.util;
 
 import java.util.Comparator;
 import java.util.List;
