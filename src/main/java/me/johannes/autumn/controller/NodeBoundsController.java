@@ -11,17 +11,16 @@ import javafx.scene.shape.StrokeType;
 import javafx.scene.text.Text;
 
 import me.johannes.autumn.model.Bounds;
+import me.johannes.autumn.model.MyHashtable;
 import me.johannes.autumn.model.PixelNode;
 import me.johannes.autumn.model.MyArrayList;
-
 import me.johannes.autumn.util.ArrayUtils;
 
 import java.util.List;
 
 public class NodeBoundsController {
-    private final MyArrayList<Bounds> bounds;
-    private final Point2D defaultMin;
-    private final Point2D defaultMax;
+    private final MyHashtable<Integer, Bounds> nodeBounds;
+    private final List<PixelNode> pixelNodes;
 
     private Pane targetPane;
     private Scene targetScene;
@@ -30,24 +29,31 @@ public class NodeBoundsController {
 
     public NodeBoundsController(Pane target, List<PixelNode> nodes, double width, double height) {
         targetPane = target;
+
+        // sort nodes in ascending order by pixel count
+        ArrayUtils.sort(nodes, PixelNode::compareTo);
+
+        // reverse the sort order of nodes so that the largest node is the first one
+        pixelNodes = nodes.reversed();
+
+        nodeBounds = new MyHashtable<>(nodes.size());
         boundsNumbers = new MyArrayList<>(nodes.size());
 
-        defaultMin = new Point2D(width, height);
-        defaultMax = new Point2D(-1, -1);
+        Point2D defaultMin = new Point2D(width, height);
+        Point2D defaultMax = new Point2D(-1, -1);
 
-        bounds = new MyArrayList<>(nodes.size());
-        for (int i = 0; i < nodes.size(); i++) {
-            bounds.add(new Bounds(defaultMin, defaultMax));
+        for (PixelNode node : pixelNodes) {
+            nodeBounds.put(node.getRoot(), new Bounds(defaultMin, defaultMax));
         }
 
-        for (int i = 0; i < nodes.size(); i++) {
-            List<Integer> indexes = nodes.get(i).pixelIndexes();
+        for (PixelNode node : pixelNodes) {
+            List<Integer> indexes = node.pixelIndexes();
 
             for (Integer index : indexes) {
                 int x = index % (int) width;
                 int y = index / (int) width;
 
-                setNodeBounds(i, x, y);
+                setNodeBounds(node.getRoot(), x, y);
             }
         }
     }
@@ -57,19 +63,13 @@ public class NodeBoundsController {
             setTargetScene(target);
         }
 
-        // sort in ascending order
-        ArrayUtils.sort(bounds, Bounds::compareTo);
+        System.out.println(pixelNodes.size());
 
-        int boundsCount = 0;
-        for (int i = bounds.size() - 1; i >= 0; i--) {
-            Bounds boundaryBox = bounds.get(i);
+        int count = 0;
+        for (PixelNode pixelNode : pixelNodes) {
+            Bounds boundaryBox = nodeBounds.get(pixelNode.getRoot());
 
-            if (boundaryBox.getMin().equals(defaultMin) || boundaryBox.getMax().equals(defaultMax)) continue;
-            if (boundaryBox.getMin().getX() == boundaryBox.getMax().getX() ||
-                    boundaryBox.getMin().getY() == boundaryBox.getMax().getY())
-                continue;
-
-            boundsCount++;
+            count++;
 
             int x = boundaryBox.getMinX();
             int y = boundaryBox.getMinY();
@@ -82,7 +82,7 @@ public class NodeBoundsController {
             boundaryRect.setArcWidth(cornerRadius);
             boundaryRect.setArcHeight(cornerRadius);
 
-            Text boundsNumber = new Text(String.valueOf(boundsCount));
+            Text boundsNumber = new Text(String.valueOf(count));
             boundsNumber.setVisible(false);
             boundsNumber.getStyleClass().add("bounds-number");
             boundsNumber.setMouseTransparent(true);
@@ -102,32 +102,32 @@ public class NodeBoundsController {
         }
     }
 
-    protected void setNodeBounds(int index, int x, int y) {
-        Bounds currentBounds = bounds.get(index);
+    protected void setNodeBounds(int rootNode, int x, int y) {
+        Bounds current = nodeBounds.get(rootNode);
 
         // set min x and y bounds
-        if (x < currentBounds.getMinX()) {
-            currentBounds.setMin(new Point2D(x, currentBounds.getMinY()));
+        if (x < current.getMinX()) {
+            current.setMin(new Point2D(x, current.getMinY()));
         }
-        if (y < currentBounds.getMinY()) {
-            currentBounds.setMin(new Point2D(currentBounds.getMinX(), y));
+        if (y < current.getMinY()) {
+            current.setMin(new Point2D(current.getMinX(), y));
         }
 
         // set max x and y bounds
-        if (x > currentBounds.getMaxX()) {
-            currentBounds.setMax(new Point2D(x, currentBounds.getMaxY()));
+        if (x > current.getMaxX()) {
+            current.setMax(new Point2D(x, current.getMaxY()));
         }
-        if (y > currentBounds.getMaxY()) {
-            currentBounds.setMax(new Point2D(currentBounds.getMaxX(), y));
+        if (y > current.getMaxY()) {
+            current.setMax(new Point2D(current.getMaxX(), y));
         }
     }
 
-    public void setNodeBounds(int index, Bounds bound) {
-        this.bounds.set(index, bound);
+    public void setNodeBounds(int rootNode, Bounds bound) {
+        nodeBounds.get(rootNode).setMinMax(bound.getMin(), bound.getMax());
     }
 
-    public Bounds getNodeBounds(int index) {
-        return bounds.get(index);
+    public Bounds getNodeBounds(int rootNode) {
+        return nodeBounds.get(rootNode);
     }
 
     public void setTargetPane(Pane target) {

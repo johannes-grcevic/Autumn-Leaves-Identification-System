@@ -17,6 +17,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -74,6 +75,8 @@ public class IdentificationSystemController implements Initializable {
     private final int MAX_CUSTOM_COLORS;
     private final double HOVER_SCALE_FACTOR;
     private final Duration HOVER_DURATION_MILLISECONDS;
+
+    private final Paint DEFAULT_STATUS_COLOR = Color.BLACK;
 
     private final String ALERT_NO_IMAGE_LOADED;
     private final String ALERT_NO_COLORS_SELECTED;
@@ -153,7 +156,7 @@ public class IdentificationSystemController implements Initializable {
             return;
         }
 
-        if (!hasColorsSelected()) {
+        if (!hasColorsSelected() || !isValidColorSelection()) {
             showAlert(ALERT_NO_COLORS_SELECTED, AlertType.ERROR);
             return;
         }
@@ -173,7 +176,7 @@ public class IdentificationSystemController implements Initializable {
             return;
         }
 
-        if (!hasColorsSelected()) {
+        if (!hasColorsSelected() && !isValidColorSelection()) {
             showAlert(ALERT_NO_COLORS_SELECTED, AlertType.ERROR);
             return;
         }
@@ -207,11 +210,12 @@ public class IdentificationSystemController implements Initializable {
             return;
         }
 
-        if (!hasColorsSelected()) {
+        if (!hasColorsSelected() || !isValidColorSelection()) {
             showAlert(ALERT_NO_COLORS_SELECTED, AlertType.ERROR);
             return;
         }
 
+        // clear the current selection from the displayed image
         if (selectedNode != null) {
             clearNodeSelection();
         }
@@ -220,13 +224,14 @@ public class IdentificationSystemController implements Initializable {
         pane.setPrefSize(fixedWidth, fixedHeight);
 
         // draw node boundary rectangles
-        NodeBoundsController controller = new NodeBoundsController(pane, nodeController.getNodes(), fixedWidth, fixedHeight);
+        NodeBoundsController controller = new NodeBoundsController(pane, nodeController.getNodes(), pane.getPrefWidth(), pane.getPrefHeight());
         controller.drawNodeBounds(Color.BLACK, Color.BLUE, 8, 0.5, null);
 
         // display the bound popup window
         Stage stage = FXUtils.showPopupWindow("Bounds | Press 'N' for numbering", pane, pane.getPrefWidth(), pane.getPrefHeight(), false);
         stage.getScene().getStylesheets().add(Objects.requireNonNull(App.getStylesheet("style")));
         stage.getIcons().add(App.getIconImage());
+        stage.setOnCloseRequest(event -> controller.setTargetScene(null));
 
         controller.setTargetScene(stage.getScene());
     }
@@ -238,7 +243,7 @@ public class IdentificationSystemController implements Initializable {
             return;
         }
 
-        if (!hasColorsSelected()) {
+        if (!hasColorsSelected() || !isValidColorSelection()) {
             showAlert(ALERT_NO_COLORS_SELECTED, AlertType.ERROR);
             return;
         }
@@ -258,21 +263,67 @@ public class IdentificationSystemController implements Initializable {
         Pane pane = new Pane(new ImageView(unselectedImage));
         pane.setPrefSize(fixedWidth, fixedHeight);
 
-        // display the animated path popup window
+        // set the duration of the animation in seconds
+        TextInputDialog durationDialog = new TextInputDialog("5");
+        durationDialog.getDialogPane().getStylesheets().add(Objects.requireNonNull(App.getStylesheet("style")));
+        durationDialog.getEditor().getStylesheets().add(Objects.requireNonNull(App.getStylesheet("style")));
+
+        durationDialog.setTitle("Animation Duration");
+        durationDialog.setHeaderText("Set the duration of the animation in seconds.");
+        durationDialog.setContentText("Enter Duration in seconds: ");
+
+        double duration = 0;
+
+        while (duration <= 0) {
+            Optional<String> result = durationDialog.showAndWait();
+            // if the user cancels the dialog break the loop
+            if (durationDialog.getResult() == null) break;
+
+            // if the user enters an empty string, continue to the next iteration
+            if (result.isEmpty()) continue;
+
+            try {
+                duration = Double.parseDouble(result.get());
+            }
+            catch (NumberFormatException e) {
+                setStatusBar(e.getMessage(), true);
+                continue;
+            }
+
+            if (duration <= 0) {
+                setStatusBar("Duration must be greater than 0!", true);
+                setStatusBarColor(Color.RED, true);
+            }
+        }
+
+        Duration animationDuration = Duration.seconds(duration);
+
+        if (animationDuration.toSeconds() > 0) {
+            setStatusBar("Selected Animation Duration: " + duration + " seconds", true);
+        }
+        else {
+            setStatusBar("Animation cancelled!", true);
+        }
+
+        // if the user cancels the dialog or enters an invalid duration
+        if (durationDialog.getResult() == null) return;
+
+        // display the path popup window
         Stage stage = FXUtils.showPopupWindow("TSP Path | Press 'N' for numbering", pane, pane.getPrefWidth(), pane.getPrefHeight(), false);
         stage.getScene().getStylesheets().add(Objects.requireNonNull(App.getStylesheet("style")));
         stage.getIcons().add(App.getIconImage());
 
         // initialize the node bounds controller
         NodeBoundsController controller = new NodeBoundsController(pane, nodes, fixedWidth, fixedHeight);
+        stage.setOnCloseRequest(event -> controller.setTargetScene(null));
         controller.setTargetScene(stage.getScene());
 
         // draw node boundary rectangles
         controller.drawNodeBounds(Color.BLACK, Color.BLUE, 8, 2, null);
 
-        // draw the connecting path
+        // draw the animated connecting path
         AnimatedPathController pathController = new AnimatedPathController(centerPoints);
-        pathController.drawAnimatedPath(selectedNode.getCenter(), pane, Duration.seconds(5), Color.RED, 1);
+        pathController.drawAnimatedPath(selectedNode.getCenter(), pane, animationDuration, Color.RED, 1);
 
         // clear the current selection from the displayed image
         if (selectedNode != null) {
@@ -354,7 +405,7 @@ public class IdentificationSystemController implements Initializable {
     }
 
     protected void onColorPickerClosed(Event event) {
-        if (!isImageLoaded()) return;
+        if (!isImageLoaded() && !isValidColorSelection()) return;
 
         if (nodeController.hasNodes()) {
             nodeController.clearNodes();
@@ -404,6 +455,24 @@ public class IdentificationSystemController implements Initializable {
             colorPicker.toBack();
             colorPicker.hide();
         }
+
+        // track when a color is removed from the custom colors list
+        while (newValue.next()) {
+            if (newValue.wasRemoved()) {
+                onCustomColorRemoved();
+            }
+        }
+    }
+
+    protected void onCustomColorRemoved() {
+        if (!isImageLoaded() && !isValidColorSelection()) return;
+
+        if (nodeController.hasNodes()) {
+            nodeController.clearNodes();
+        }
+
+        createNodesFromImage(displayedImage);
+        setStatusBar("Leaf Count: " + nodeController.getNodeCount(), true);
     }
 
     protected void onAutoSelectButtonClicked(ActionEvent event) {
@@ -470,13 +539,13 @@ public class IdentificationSystemController implements Initializable {
 
     // Utility //
     public void showNodeTooltip(Node source, double x, double y) {
-        int sequenceNumber = nodeController.getNodeSequenceNumber(clickedNode);
+        int index = nodeController.getNodeIndex(clickedNode) + 1;
         int pixelCount = clickedNode.getPixelCount();
 
         Label content = new Label("""
                 Leaf Number: %d
                 Estimated Size (pixel units): %d
-                """.formatted(sequenceNumber, pixelCount));
+                """.formatted(index, pixelCount));
 
         // make the tooltip invisible to mouse clicks
         content.setMouseTransparent(true);
@@ -542,9 +611,7 @@ public class IdentificationSystemController implements Initializable {
             for (int y = 0; y < fixedHeight; y++) {
                 Color pixelColor = reader.getColor(x, y);
 
-                if (pixelColor == null) continue;
-
-                // add the color to the color picker if it is an autumn leaf
+                // add the color to the color picker it's in the brown/orange range
                 if (ImageUtils.isAutumnLeaf(pixelColor)) {
                     addCustomColor(pixelColor);
                 }
@@ -590,7 +657,11 @@ public class IdentificationSystemController implements Initializable {
     }
 
     public boolean hasColorsSelected() {
-        return colorPicker.getValue() != null || hasCustomColorsSelected();
+        return !colorPicker.getValue().equals(Color.WHITE) || hasCustomColorsSelected();
+    }
+
+    public boolean isValidColorSelection() {
+        return (!colorPicker.getValue().equals(Color.WHITE) || hasCustomColorsSelected()) && (nodeController.hasNodes());
     }
 
     public boolean hasCustomColorsSelected() {
@@ -604,9 +675,17 @@ public class IdentificationSystemController implements Initializable {
             throw new IllegalArgumentException("Message cannot be blank!");
         }
 
-        String statusText = "\n" + message;
+        statusLabel.setText(message);
+        statusLabel.setVisible(visible);
 
-        statusLabel.setText(statusText);
+        // set the default color of the status bar label
+        setStatusBarColor(DEFAULT_STATUS_COLOR, visible);
+    }
+
+    public void setStatusBarColor(Paint color, boolean visible) {
+        if (statusLabel == null) return;
+
+        statusLabel.setTextFill(color);
         statusLabel.setVisible(visible);
     }
 
@@ -637,9 +716,9 @@ public class IdentificationSystemController implements Initializable {
         addToColorPickerMenuItem.setOnAction(this::onAddToColorPickerClicked);
 
         // add hover scale animation to the buttons
-        FXUtils.setHoverScaleAnimation(autoSelectColorsButton, HOVER_SCALE_FACTOR, HOVER_DURATION_MILLISECONDS);
-        FXUtils.setHoverScaleAnimation(clearColorSelectionButton, HOVER_SCALE_FACTOR, HOVER_DURATION_MILLISECONDS);
-        FXUtils.setHoverScaleAnimation(colorPicker, HOVER_SCALE_FACTOR, HOVER_DURATION_MILLISECONDS);
+        FXUtils.addHoverScaleAnimation(autoSelectColorsButton, HOVER_SCALE_FACTOR, HOVER_DURATION_MILLISECONDS);
+        FXUtils.addHoverScaleAnimation(clearColorSelectionButton, HOVER_SCALE_FACTOR, HOVER_DURATION_MILLISECONDS);
+        FXUtils.addHoverScaleAnimation(colorPicker, HOVER_SCALE_FACTOR, HOVER_DURATION_MILLISECONDS);
 
         setClickableControlsActive(false);
         setStatusBar(ALERT_NO_IMAGE_LOADED, true);

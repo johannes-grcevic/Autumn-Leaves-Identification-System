@@ -2,6 +2,7 @@ package me.johannes.autumn.model;
 
 import javafx.geometry.Point2D;
 
+import me.johannes.autumn.util.PointUtils;
 import java.util.List;
 
 public class NearestNeighbor {
@@ -54,7 +55,7 @@ public class NearestNeighbor {
         // find the nearest neighbor in the set of unvisited points
         for (Point2D point : unvisited) {
             // calculate the distance between the current point and the neighbor
-            double distance = distance(current, point);
+            double distance = PointUtils.distanceSquared(current, point);
 
             // update the nearest point if the distance is smaller than the current nearest neighbor
             if (distance < nearestDistance) {
@@ -64,10 +65,5 @@ public class NearestNeighbor {
         }
 
         return nearestNeighbour;
-    }
-
-    // distance between two points
-    public double distance(Point2D a, Point2D b) {
-        return a.distance(b);
     }
 }

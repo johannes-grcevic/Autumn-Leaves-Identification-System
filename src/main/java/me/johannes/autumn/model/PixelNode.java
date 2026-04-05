@@ -4,7 +4,7 @@ import javafx.geometry.Point2D;
 
 import java.util.List;
 
-public record PixelNode(int root, List<Integer> pixelIndexes, int minSize, int imageWidth) {
+public record PixelNode(int root, List<Integer> pixelIndexes, int minSize, int imageWidth) implements Comparable<PixelNode> {
 
     public static final PixelNode EMPTY = new PixelNode(-1, 0, 0);
 
@@ -50,5 +50,10 @@ public record PixelNode(int root, List<Integer> pixelIndexes, int minSize, int i
 
     public void clear() {
         pixelIndexes.clear();
+    }
+
+    @Override
+    public int compareTo(PixelNode other) {
+        return this.getPixelCount() - other.getPixelCount();
     }
 }

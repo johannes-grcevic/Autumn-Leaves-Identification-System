@@ -4,6 +4,9 @@ import java.util.Comparator;
 import java.util.List;
 
 public class ArrayUtils {
+    // Prevent instantiation
+    private ArrayUtils() {}
+
     /**
      * Sorts an int array using the Insertion Sort algorithm.
      */
@@ -55,24 +58,24 @@ public class ArrayUtils {
     /**
      * Sorts a List of type T using the Insertion Sort algorithm.
      */
-    public static <T> void sort(List<T> array, Comparator<T> comparator) {
-        int size = array.size();
+    public static <T> void sort(List<T> list, Comparator<T> comparator) {
+        int size = list.size();
 
         // Start from the second element (index 1),
         // since a single element is already "sorted"
         for (int i = 1; i < size; i++) {
-            T key = array.get(i);
+            T key = list.get(i);
             int j = i - 1;
 
             /*
              * Shift elements that are greater than 'key'
              * one position to the right
              */
-            while (j >= 0 && comparator.compare(array.get(j), key) > 0) {
-                array.set(j + 1, array.get(j)); // Shift element right
-                j = j - 1; // Move left in the array
+            while (j >= 0 && comparator.compare(list.get(j), key) > 0) {
+                list.set(j + 1, list.get(j)); // Shift element right
+                j = j - 1; // Move left in the list
             }
-            array.set(j + 1, key); // Insert the key into its correct position
+            list.set(j + 1, key); // Insert the key into its correct position
         }
     }
 }

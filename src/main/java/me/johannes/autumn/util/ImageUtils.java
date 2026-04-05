@@ -9,7 +9,17 @@ import javafx.scene.paint.Color;
 import java.util.List;
 
 public class ImageUtils {
-    public static WritableImage getBlackAndWhite(Image source, List<Color> compareColors, double saturationThreshold, double brightnessThreshold) {
+    // Prevent instantiation
+    private ImageUtils() {}
+
+    /**
+     * @param source The source image.
+     * @param selectedColors The colors to compare against.
+     * @param saturationThreshold The minimum saturation threshold for a given color.
+     * @param brightnessThreshold The minimum brightness threshold for a given color.
+     * @return A new image with black and white pixels based on the given colors.
+     */
+    public static WritableImage getBlackAndWhite(Image source, List<Color> selectedColors, double saturationThreshold, double brightnessThreshold) {
         int width = (int) source.getWidth();
         int height = (int) source.getHeight();
 
@@ -22,7 +32,7 @@ public class ImageUtils {
 
                 Color pixelColor = reader.getColor(x, y);
 
-                if (isValidColor(pixelColor, compareColors, saturationThreshold, brightnessThreshold)) {
+                if (isValidColor(pixelColor, selectedColors, saturationThreshold, brightnessThreshold)) {
                     writer.setColor(x, y, Color.WHITE);
                 }
                 else {
@@ -34,13 +44,20 @@ public class ImageUtils {
         return writableImage;
     }
 
-    public static boolean isValidColor(Color pixel, List<Color> compareColors, double saturationThreshold, double brightnessThreshold) {
-        double hue = pixel.getHue();
+    /**
+     * @param color The color to check.
+     * @param compareColors The colors to compare against.
+     * @param saturationThreshold The minimum saturation threshold for a given color.
+     * @param brightnessThreshold The minimum brightness threshold for a given color.
+     * @return True if the hue, saturation, and brightness of the color are within the specified thresholds for any of the given colors.
+     */
+    public static boolean isValidColor(Color color, List<Color> compareColors, double saturationThreshold, double brightnessThreshold) {
+        double hue = color.getHue();
 
-        for (Color color : compareColors) {
-            if (color.getHue() >= hue &&
-                    color.getSaturation() > saturationThreshold &&
-                    color.getBrightness() > brightnessThreshold)
+        for (Color compareColor : compareColors) {
+            if (compareColor.getHue() >= hue &&
+                    compareColor.getSaturation() > saturationThreshold &&
+                    compareColor.getBrightness() > brightnessThreshold)
 
                 return true;
         }
@@ -48,6 +65,10 @@ public class ImageUtils {
         return false;
     }
 
+    /**
+     * @param pixel The pixel to check.
+     * @return True if the pixel is in the autumn leaf color range.
+     */
     public static boolean isAutumnLeaf(Color pixel) {
         double hue = pixel.getHue();
         double saturation = pixel.getSaturation();

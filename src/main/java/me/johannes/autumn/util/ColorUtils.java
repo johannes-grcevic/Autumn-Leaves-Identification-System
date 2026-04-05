@@ -10,6 +10,9 @@ import java.util.Random;
 public class ColorUtils {
     private static final MyHashtable<Color, String> CSS_COLOR_NAMES = new MyHashtable<>();
 
+    // Prevent instantiation
+    private ColorUtils() {}
+
     static {
         CSS_COLOR_NAMES.put(Color.web("aliceblue"), "aliceblue");
         CSS_COLOR_NAMES.put(Color.web("antiquewhite"), "antiquewhite");
@@ -153,10 +156,18 @@ public class ColorUtils {
         CSS_COLOR_NAMES.put(Color.web("yellowgreen"), "yellowgreen");
     }
 
+    /**
+     * @param rand Random number generator to use
+     * @return A random color from 0-255 in the rgb range.
+     */
     public static Color getRandomColor(Random rand) {
         return Color.rgb(rand.nextInt(256), rand.nextInt(256), rand.nextInt(256));
     }
 
+    /**
+     * @param color The color to get the name of.
+     * @return The name of the color, or null if the color is not found.
+     */
     public static String getColorName(Color color) {
         if (color == null) return null;
 
@@ -180,11 +191,16 @@ public class ColorUtils {
         return closestColor;
     }
 
+    /**
+     * @param a The first color.
+     * @param b The second color.
+     * @return The distance between the two colors.
+     */
     private static double colorDistance(Color a, Color b) {
-        double dr = a.getRed()   - b.getRed();
-        double dg = a.getGreen() - b.getGreen();
-        double db = a.getBlue()  - b.getBlue();
+        double distRed = a.getRed() - b.getRed();
+        double distGreen = a.getGreen() - b.getGreen();
+        double distBlue = a.getBlue() - b.getBlue();
 
-        return dr * dr + dg * dg + db * db;
+        return distRed * distRed + distGreen * distGreen + distBlue * distBlue;
     }
 }

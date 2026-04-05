@@ -7,7 +7,9 @@ import me.johannes.autumn.model.MyArrayList;
 import me.johannes.autumn.model.MyHashtable;
 import me.johannes.autumn.model.PixelNode;
 import me.johannes.autumn.model.UnionFind;
+import me.johannes.autumn.util.ArrayUtils;
 
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -114,21 +116,15 @@ public class NodeController {
         return count;
     }
 
-    public int getNodeSequenceNumber(PixelNode node) {
+    public int getNodeIndex(PixelNode node) {
         if (node == null || !node.isValid()) return 0;
 
         List<PixelNode> nodes = getNodes();
 
-        int sequenceNumber = 0;
-        for (int i = nodes.size() - 1; i >= 0; i--) {
-            sequenceNumber++;
+        // sort nodes by pixel count in descending order
+        ArrayUtils.sort(nodes, Comparator.comparingInt(PixelNode::getPixelCount).reversed());
 
-            if (nodes.get(i).getRoot() == node.getRoot()) {
-                return sequenceNumber;
-            }
-        }
-
-        return 0;
+        return nodes.indexOf(node);
     }
 
     public void clearNodes() {
