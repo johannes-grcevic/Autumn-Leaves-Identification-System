@@ -23,9 +23,9 @@ public class AnimatedPathController {
     // nearest neighbor algorithm
     private final NearestNeighbor nn;
 
-    public AnimatedPathController(List<Point2D> nodePoints) {
+    public AnimatedPathController(List<Point2D> pathPoints) {
         path = new Path();
-        nn = new NearestNeighbor(nodePoints);
+        nn = new NearestNeighbor(pathPoints);
     }
 
     public void drawAnimatedPath(Point2D start, Pane target, Duration duration, Color strokeColor, double strokeWidth) {
@@ -128,5 +128,6 @@ public class AnimatedPathController {
 
     public void clearPath() {
         path.getElements().clear();
+        nn.clear();
     }
 }

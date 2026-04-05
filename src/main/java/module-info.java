@@ -3,6 +3,7 @@ module me.johannes.autumn {
     requires javafx.fxml;
     requires java.desktop;
     requires java.compiler;
+    requires java.naming;
 
     opens me.johannes.autumn.main to javafx.fxml;
     opens me.johannes.autumn.controller to javafx.fxml;

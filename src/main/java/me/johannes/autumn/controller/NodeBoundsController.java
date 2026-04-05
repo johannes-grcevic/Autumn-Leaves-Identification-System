@@ -21,15 +21,9 @@ import java.util.List;
 public class NodeBoundsController {
     private final MyHashtable<Integer, Bounds> nodeBounds;
     private final List<PixelNode> pixelNodes;
-
-    private Pane targetPane;
-    private Scene targetScene;
-
     private final List<Text> boundsNumbers;
 
-    public NodeBoundsController(Pane target, List<PixelNode> nodes, double width, double height) {
-        targetPane = target;
-
+    public NodeBoundsController(List<PixelNode> nodes, double width, double height) {
         // sort nodes in ascending order by pixel count
         ArrayUtils.sort(nodes, PixelNode::compareTo);
 
@@ -58,14 +52,12 @@ public class NodeBoundsController {
         }
     }
 
-    public void drawNodeBounds(Color textColor, Color boundryColor, int sizeOffset, double cornerRadius, Scene target) {
-        if (targetScene == null) {
-            setTargetScene(target);
-        }
-
-        System.out.println(pixelNodes.size());
+    public void drawNodeBounds(Pane target, Scene scene, Color textColor, Color boundryColor, int sizeOffset, double cornerRadius) {
+        if (target == null || scene == null) return;
+        onTargetSceneChanged(scene);
 
         int count = 0;
+
         for (PixelNode pixelNode : pixelNodes) {
             Bounds boundaryBox = nodeBounds.get(pixelNode.getRoot());
 
@@ -98,7 +90,7 @@ public class NodeBoundsController {
             boundsNumber.setY(y + (height + textHeight) / 2);
 
             boundsNumbers.add(boundsNumber);
-            targetPane.getChildren().addAll(boundaryRect, boundsNumber);
+            target.getChildren().addAll(boundaryRect, boundsNumber);
         }
     }
 
@@ -130,25 +122,14 @@ public class NodeBoundsController {
         return nodeBounds.get(rootNode);
     }
 
-    public void setTargetPane(Pane target) {
-        targetPane = target;
+    public boolean HasBounds() {
+        return !nodeBounds.isEmpty();
     }
 
-    public Pane getTargetPane() {
-        return targetPane;
-    }
-
-    public void setTargetScene(Scene target) {
-        targetScene = target;
-
-        // trigger scene changed event
-        if (target != null) {
-            onTargetSceneChanged(target);
-        }
-    }
-
-    public Scene getTargetScene() {
-        return targetScene;
+    public void clearBounds() {
+        nodeBounds.clear();
+        pixelNodes.clear();
+        boundsNumbers.clear();
     }
 
     // Events

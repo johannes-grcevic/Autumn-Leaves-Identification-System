@@ -69,36 +69,40 @@ public class IdentificationSystemController implements Initializable {
     private PixelNode selectedNode;
     private Color clickedPixelColor;
 
-    private final Random RANDOM_GENERATOR = new Random();
+    public final int MIN_NODE_SIZE;
+    public final int MAX_CUSTOM_COLORS;
+    public final double HOVER_SCALE_FACTOR;
+    public final Duration HOVER_DURATION_MILLISECONDS;
 
-    private final int MIN_NODE_SIZE;
-    private final int MAX_CUSTOM_COLORS;
-    private final double HOVER_SCALE_FACTOR;
-    private final Duration HOVER_DURATION_MILLISECONDS;
+    public final Random RANDOM_GENERATOR = new Random();
 
-    private final Paint DEFAULT_STATUS_COLOR = Color.BLACK;
-    private final List<Color> AUTUMN_COLORS;
+    public final Color DEFAULT_STATUS_COLOR = Color.BLACK;
+    public final Color SELECTED_NODE_COLOR = Color.RED;
+    public final Color NODE_BOUNDARY_COLOR = Color.BLUE;
+    public final Color NODE_NUMBER_TEXT_COLOR = Color.BLACK;
+    public final List<Color> AUTUMN_COLOR_PALETTE;
 
-    private final double HUE_TOLERANCE;
-    private final double SATURATION_THRESHOLD;
-    private final double BRIGHTNESS_THRESHOLD;
+    public final double HUE_TOLERANCE;
+    public final double SATURATION_THRESHOLD;
+    public final double BRIGHTNESS_THRESHOLD;
 
-    private final String ALERT_NO_IMAGE_LOADED;
-    private final String ALERT_NO_COLORS_SELECTED;
-    private final String ALERT_NO_NODE_SELECTED;
+    public final String ALERT_NO_IMAGE_LOADED;
+    public final String ALERT_NO_COLORS_SELECTED;
+    public final String ALERT_NO_NODE_SELECTED;
 
     public IdentificationSystemController() {
         // the minimum size for a leaf node to be considered valid
         MIN_NODE_SIZE = 55;
         // the maximum number of custom colors that can be selected by the user
         MAX_CUSTOM_COLORS = 120;
+
         // the scale factor for buttons when hovered over
         HOVER_SCALE_FACTOR = 1.03;
         // the duration of the button hover effect in milliseconds
         HOVER_DURATION_MILLISECONDS = Duration.millis(200);
 
         // autumn color palette for automatic color selection
-        AUTUMN_COLORS = List.of(
+        AUTUMN_COLOR_PALETTE = List.of(
                 Color.hsb(20, 0.8, 0.7),  // brown
                 Color.hsb(30, 0.9, 0.8),  // dark orange
                 Color.hsb(40, 0.9, 0.9)  // orange
@@ -162,10 +166,10 @@ public class IdentificationSystemController implements Initializable {
         imageView.setImage(displayedImage);
 
         // initialize the node controller with the image dimensions
-        initializeNodeController(fixedWidth * fixedHeight);
+        initNodeController(fixedWidth, fixedHeight);
 
         // disable the interactive features of the app until the image is loaded
-        setClickableControlsActive(true);
+        setUserControlsActive(true);
     }
 
     @FXML
@@ -242,17 +246,14 @@ public class IdentificationSystemController implements Initializable {
         Pane pane = new Pane(new ImageView(displayedImage));
         pane.setPrefSize(fixedWidth, fixedHeight);
 
-        // draw node boundary rectangles
-        NodeBoundsController controller = new NodeBoundsController(pane, nodeController.getNodes(), pane.getPrefWidth(), pane.getPrefHeight());
-        controller.drawNodeBounds(Color.BLACK, Color.BLUE, 8, 0.5, null);
-
         // display the bound popup window
         Stage stage = FXUtils.showPopupWindow("Bounds | Press 'N' for numbering", pane, pane.getPrefWidth(), pane.getPrefHeight(), false);
         stage.getScene().getStylesheets().add(Objects.requireNonNull(App.getStylesheet("style")));
         stage.getIcons().add(App.getIconImage());
-        stage.setOnCloseRequest(event -> controller.setTargetScene(null));
 
-        controller.setTargetScene(stage.getScene());
+        // draw node boundary rectangles
+        NodeBoundsController controller = new NodeBoundsController(nodeController.getNodes(), fixedWidth, fixedHeight);
+        controller.drawNodeBounds(pane, stage.getScene(), NODE_NUMBER_TEXT_COLOR, NODE_BOUNDARY_COLOR, 8, 0.5);
     }
 
     @FXML
@@ -267,20 +268,10 @@ public class IdentificationSystemController implements Initializable {
             return;
         }
 
-        List<PixelNode> nodes = nodeController.getNodes();
-        List<Point2D> centerPoints = new MyArrayList<>(nodes.size());
-
-        for (PixelNode node : nodes) {
-            centerPoints.add(node.getCenter());
-        }
-
         if (selectedNode == null) {
             showAlert(ALERT_NO_NODE_SELECTED, AlertType.ERROR);
             return;
         }
-
-        Pane pane = new Pane(new ImageView(unselectedImage));
-        pane.setPrefSize(fixedWidth, fixedHeight);
 
         // set the duration of the animation in seconds
         TextInputDialog durationDialog = new TextInputDialog("5");
@@ -327,20 +318,25 @@ public class IdentificationSystemController implements Initializable {
         // if the user cancels the dialog or enters an invalid duration
         if (durationDialog.getResult() == null) return;
 
-        // display the path popup window
+        // display the popup window
+        Pane pane = new Pane(new ImageView(unselectedImage));
+        pane.setPrefSize(fixedWidth, fixedHeight);
+
         Stage stage = FXUtils.showPopupWindow("TSP Path | Press 'N' for numbering", pane, pane.getPrefWidth(), pane.getPrefHeight(), false);
         stage.getScene().getStylesheets().add(Objects.requireNonNull(App.getStylesheet("style")));
         stage.getIcons().add(App.getIconImage());
 
-        // initialize the node bounds controller
-        NodeBoundsController controller = new NodeBoundsController(pane, nodes, fixedWidth, fixedHeight);
-        stage.setOnCloseRequest(event -> controller.setTargetScene(null));
-        controller.setTargetScene(stage.getScene());
-
         // draw node boundary rectangles
-        controller.drawNodeBounds(Color.BLACK, Color.BLUE, 8, 2, null);
+        NodeBoundsController controller = new NodeBoundsController(nodeController.getNodes(), fixedWidth, fixedHeight);
+        controller.drawNodeBounds(pane, stage.getScene(), Color.BLACK, Color.BLUE, 8, 2);
 
         // draw the animated connecting path
+        List<Point2D> centerPoints = new MyArrayList<>();
+
+        for (PixelNode node : nodeController.getNodes()) {
+            centerPoints.add(node.getCenter());
+        }
+
         AnimatedPathController pathController = new AnimatedPathController(centerPoints);
         pathController.drawAnimatedPath(selectedNode.getCenter(), pane, animationDuration, Color.RED, 1);
 
@@ -394,7 +390,7 @@ public class IdentificationSystemController implements Initializable {
         selectedNode = null;
 
         setStatusBar(ALERT_NO_IMAGE_LOADED, true);
-        setClickableControlsActive(false);
+        setUserControlsActive(false);
 
         // clear the color selection
         clearColorSelection();
@@ -631,7 +627,7 @@ public class IdentificationSystemController implements Initializable {
                 Color pixelColor = reader.getColor(x, y);
 
                 // add the color to the color picker it's in the brown/orange range
-                if (isAutumnLeaf(pixelColor)) {
+                if (isAutumnColor(pixelColor)) {
                     addCustomColor(pixelColor);
                 }
             }
@@ -680,12 +676,16 @@ public class IdentificationSystemController implements Initializable {
         return !colorPicker.getValue().equals(Color.WHITE) || hasCustomColorsSelected();
     }
 
+    public boolean hasCustomColorsSelected() {
+        return !colorPicker.getCustomColors().isEmpty();
+    }
+
     public boolean isValidColorSelection() {
         return (!colorPicker.getValue().equals(Color.WHITE) || hasCustomColorsSelected()) && (nodeController.hasNodes());
     }
 
-    public boolean hasCustomColorsSelected() {
-        return !colorPicker.getCustomColors().isEmpty();
+    public boolean isAutumnColor(Color color) {
+        return ImageUtils.isValidColor(color, AUTUMN_COLOR_PALETTE, HUE_TOLERANCE, SATURATION_THRESHOLD, BRIGHTNESS_THRESHOLD);
     }
 
     public void setStatusBar(String message, boolean visible) {
@@ -709,7 +709,7 @@ public class IdentificationSystemController implements Initializable {
         statusLabel.setVisible(visible);
     }
 
-    public void setClickableControlsActive(boolean value) {
+    public void setUserControlsActive(boolean value) {
         autoSelectColorsButton.setDisable(!value);
         clearColorSelectionButton.setDisable(!value);
         colorPicker.setDisable(!value);
@@ -719,23 +719,19 @@ public class IdentificationSystemController implements Initializable {
         return imageFile != null;
     }
 
-    public boolean isAutumnLeaf(Color color) {
-        return ImageUtils.isValidColor(color, AUTUMN_COLORS, HUE_TOLERANCE, SATURATION_THRESHOLD, BRIGHTNESS_THRESHOLD);
-    }
-
-    public void initializeNodeController(int imageSize) {
-        nodeController = new NodeController(imageSize);
-    }
-
     // Initialization //
+    public void initNodeController(int width, int height) {
+        nodeController = new NodeController(width * height);
+    }
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         colorPicker.getCustomColors().addListener(this::onCustomColorsListChanged);
         colorPicker.setOnHidden(this::onColorPickerClosed);
 
         imageView.imageProperty().addListener(this::onImageChanged);
-
         imageView.setOnMouseClicked(this::onImageViewMouseClicked);
+
         autoSelectColorsButton.setOnAction(this::onAutoSelectButtonClicked);
         addToColorPickerMenuItem.setOnAction(this::onAddToColorPickerClicked);
 
@@ -744,7 +740,7 @@ public class IdentificationSystemController implements Initializable {
         FXUtils.addHoverScaleAnimation(clearColorSelectionButton, HOVER_SCALE_FACTOR, HOVER_DURATION_MILLISECONDS);
         FXUtils.addHoverScaleAnimation(colorPicker, HOVER_SCALE_FACTOR, HOVER_DURATION_MILLISECONDS);
 
-        setClickableControlsActive(false);
+        setUserControlsActive(false);
         setStatusBar(ALERT_NO_IMAGE_LOADED, true);
     }
 }

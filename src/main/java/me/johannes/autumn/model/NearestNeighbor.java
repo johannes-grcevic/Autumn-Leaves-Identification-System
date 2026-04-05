@@ -66,4 +66,8 @@ public class NearestNeighbor {
 
         return nearestNeighbour;
     }
+
+    public void clear() {
+        points.clear();
+    }
 }
