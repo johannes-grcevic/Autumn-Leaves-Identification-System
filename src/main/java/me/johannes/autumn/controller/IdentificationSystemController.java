@@ -253,7 +253,7 @@ public class IdentificationSystemController implements Initializable {
 
         // draw node boundary rectangles
         NodeBoundsController controller = new NodeBoundsController(nodeController.getNodes(), fixedWidth, fixedHeight);
-        controller.drawNodeBounds(pane, stage.getScene(), NODE_NUMBER_TEXT_COLOR, NODE_BOUNDARY_COLOR, 8, 0.5);
+        controller.drawNodeBounds(pane, stage.getScene(), NODE_NUMBER_TEXT_COLOR, NODE_BOUNDARY_COLOR, 8);
     }
 
     @FXML
@@ -328,7 +328,7 @@ public class IdentificationSystemController implements Initializable {
 
         // draw node boundary rectangles
         NodeBoundsController controller = new NodeBoundsController(nodeController.getNodes(), fixedWidth, fixedHeight);
-        controller.drawNodeBounds(pane, stage.getScene(), Color.BLACK, Color.BLUE, 8, 2);
+        controller.drawNodeBounds(pane, stage.getScene(), NODE_NUMBER_TEXT_COLOR, NODE_BOUNDARY_COLOR, 8);
 
         // draw the animated connecting path
         List<Point2D> centerPoints = new MyArrayList<>();
@@ -442,7 +442,7 @@ public class IdentificationSystemController implements Initializable {
 
             // set the color picker label name for colors in the picker
             Label label = (Label) colorPicker.lookup(".color-picker-label");
-            label.setText(StringUtils.capitalize(colorName));
+            label.setText(colorName);
         });
     }
 
@@ -450,9 +450,7 @@ public class IdentificationSystemController implements Initializable {
         if (clickedPixelColor == null) return;
 
         addCustomColor(clickedPixelColor);
-        String colorName = ColorUtils.getColorName(clickedPixelColor);
-
-        setStatusBar("Added Color: " + StringUtils.capitalize(colorName), true);
+        setStatusBar("Added Color: " + ColorUtils.getColorName(clickedPixelColor), true);
     }
 
     protected void onCustomColorsListChanged(ListChangeListener.Change<?> newValue) {
@@ -517,7 +515,7 @@ public class IdentificationSystemController implements Initializable {
         // when the left mouse button is pressed, select the clicked node
         if (event.getButton() == MouseButton.PRIMARY) {
 
-            setStatusBar("Clicked Color: " + StringUtils.capitalize(ColorUtils.getColorName(clickedPixelColor)), true);
+            setStatusBar("Clicked Color: " + ColorUtils.getColorName(clickedPixelColor), true);
 
             nodeContextMenu.hide();
 

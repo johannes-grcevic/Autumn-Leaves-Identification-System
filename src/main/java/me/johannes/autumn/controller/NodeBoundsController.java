@@ -13,15 +13,16 @@ import javafx.scene.text.Text;
 import me.johannes.autumn.model.Bounds;
 import me.johannes.autumn.model.MyHashtable;
 import me.johannes.autumn.model.PixelNode;
-import me.johannes.autumn.model.MyArrayList;
 import me.johannes.autumn.util.ArrayUtils;
 
 import java.util.List;
 
 public class NodeBoundsController {
     private final MyHashtable<Integer, Bounds> nodeBounds;
+    private final MyHashtable<Integer, Text> boundsNumbers;
     private final List<PixelNode> pixelNodes;
-    private final List<Text> boundsNumbers;
+
+    private int boundsNumber = 1;
 
     public NodeBoundsController(List<PixelNode> nodes, double width, double height) {
         // sort nodes in ascending order by pixel count
@@ -30,8 +31,8 @@ public class NodeBoundsController {
         // reverse the sort order of nodes so that the largest node is the first one
         pixelNodes = nodes.reversed();
 
-        nodeBounds = new MyHashtable<>(nodes.size());
-        boundsNumbers = new MyArrayList<>(nodes.size());
+        nodeBounds = new MyHashtable<>();
+        boundsNumbers = new MyHashtable<>();
 
         Point2D defaultMin = new Point2D(width, height);
         Point2D defaultMax = new Point2D(-1, -1);
@@ -52,45 +53,44 @@ public class NodeBoundsController {
         }
     }
 
-    public void drawNodeBounds(Pane target, Scene scene, Color textColor, Color boundryColor, int sizeOffset, double cornerRadius) {
+    public void drawNodeBoundary(PixelNode node, Pane target, Scene scene, Color numberColor, Color boundryColor, int offset) {
         if (target == null || scene == null) return;
         onTargetSceneChanged(scene);
 
-        int count = 0;
+        Bounds boundary = nodeBounds.get(node.getRoot());
 
-        for (PixelNode pixelNode : pixelNodes) {
-            Bounds boundaryBox = nodeBounds.get(pixelNode.getRoot());
+        int x = boundary.getMinX();
+        int y = boundary.getMinY();
+        int width = boundary.getWidth() + offset;
+        int height = boundary.getHeight() + offset;
 
-            count++;
+        Rectangle boundaryRect = new Rectangle(x, y, width, height);
+        boundaryRect.setFill(Color.TRANSPARENT);
+        boundaryRect.setStroke(boundryColor);
+        boundaryRect.getStyleClass().add("bounds-rectangle");
 
-            int x = boundaryBox.getMinX();
-            int y = boundaryBox.getMinY();
-            int width = boundaryBox.getWidth() + sizeOffset;
-            int height = boundaryBox.getHeight() + sizeOffset;
+        Text numberText = new Text(String.valueOf(boundsNumber));
+        numberText.setVisible(false);
+        numberText.getStyleClass().add("bounds-number");
+        numberText.setMouseTransparent(true);
+        numberText.setFill(numberColor);
+        numberText.setStrokeType(StrokeType.OUTSIDE);
+        numberText.setStroke(Color.WHITE);
+        numberText.setStrokeWidth(1.2);
 
-            Rectangle boundaryRect = new Rectangle(x, y, width, height);
-            boundaryRect.setFill(Color.TRANSPARENT);
-            boundaryRect.setStroke(boundryColor);
-            boundaryRect.setArcWidth(cornerRadius);
-            boundaryRect.setArcHeight(cornerRadius);
+        double textWidth = numberText.getLayoutBounds().getWidth();
+        double textHeight = numberText.getLayoutBounds().getHeight();
 
-            Text boundsNumber = new Text(String.valueOf(count));
-            boundsNumber.setVisible(false);
-            boundsNumber.getStyleClass().add("bounds-number");
-            boundsNumber.setMouseTransparent(true);
-            boundsNumber.setFill(textColor);
-            boundsNumber.setStrokeType(StrokeType.OUTSIDE);
-            boundsNumber.setStroke(Color.WHITE);
-            boundsNumber.setStrokeWidth(1.2);
+        numberText.setX(x + (width - textWidth) / 2);
+        numberText.setY(y + (height + textHeight) / 2);
 
-            double textWidth = boundsNumber.getLayoutBounds().getWidth();
-            double textHeight = boundsNumber.getLayoutBounds().getHeight();
+        boundsNumbers.put(boundsNumber++, numberText);
+        target.getChildren().addAll(boundaryRect, numberText);
+    }
 
-            boundsNumber.setX(x + (width - textWidth) / 2);
-            boundsNumber.setY(y + (height + textHeight) / 2);
-
-            boundsNumbers.add(boundsNumber);
-            target.getChildren().addAll(boundaryRect, boundsNumber);
+    public void drawNodeBounds(Pane target, Scene scene, Color numberColor, Color boundryColor, int offset) {
+        for (PixelNode node : pixelNodes) {
+            drawNodeBoundary(node, target, scene, numberColor, boundryColor, offset);
         }
     }
 
@@ -114,11 +114,11 @@ public class NodeBoundsController {
         }
     }
 
-    public void setNodeBounds(int rootNode, Bounds bound) {
+    public void setNodeBoundary(int rootNode, Bounds bound) {
         nodeBounds.get(rootNode).setMinMax(bound.getMin(), bound.getMax());
     }
 
-    public Bounds getNodeBounds(int rootNode) {
+    public Bounds getNodeBoundary(int rootNode) {
         return nodeBounds.get(rootNode);
     }
 
@@ -130,6 +130,7 @@ public class NodeBoundsController {
         nodeBounds.clear();
         pixelNodes.clear();
         boundsNumbers.clear();
+        boundsNumber = 1;
     }
 
     // Events
@@ -140,7 +141,7 @@ public class NodeBoundsController {
     protected void onKeyPressed(KeyEvent event) {
         if (event.getCode() != KeyCode.N) return;
 
-        for (Text number : boundsNumbers) {
+        for (Text number : boundsNumbers.values()) {
             number.setVisible(!number.isVisible());
         }
     }
