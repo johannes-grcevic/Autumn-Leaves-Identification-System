@@ -1,10 +1,17 @@
 .menuBar {
+    -fx-background-color: LightGray;
     -fx-border-radius: 25px;
     -fx-background-radius: 5px;
     -fx-cursor: hand;
 }
 
+.menuBar:hover {
+    -fx-background-color: LightBlue;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.2), 10, 0, 0, 0);
+}
+
 .button {
+    -fx-background-color: LightGray;
     -fx-border-radius: 25px;
     -fx-background-radius: 5px;
     -fx-animated: true;
@@ -13,11 +20,17 @@
 
 .button:hover {
     -fx-background-color: LightBlue;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.2), 10, 0, 0, 0);
 }
 
 .bounds-number {
     -fx-font-size: 13px;
     -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.bounds-rectangle {
+    -fx-border-radius: 5px;
     -fx-cursor: hand;
 }
 
@@ -39,4 +52,8 @@
     -fx-background-position: center;
     -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.5), 10, 0, 0, 0);
     -fx-cursor: hand;
+}
+
+.centerPane:hover {
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.7), 10, 0, 0, 0);
 }
