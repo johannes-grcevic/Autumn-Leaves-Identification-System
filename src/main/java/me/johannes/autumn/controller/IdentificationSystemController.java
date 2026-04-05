@@ -18,18 +18,19 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Duration;
 
 import me.johannes.autumn.main.App;
+import me.johannes.autumn.model.Bounds;
 import me.johannes.autumn.model.MyArrayList;
 import me.johannes.autumn.model.PixelNode;
 import me.johannes.autumn.util.ColorUtils;
 import me.johannes.autumn.util.FXUtils;
 import me.johannes.autumn.util.ImageUtils;
-import me.johannes.autumn.util.StringUtils;
 
 import java.io.File;
 import java.net.URL;
@@ -59,7 +60,6 @@ public class IdentificationSystemController implements Initializable {
     private File imageFile;
     private WritableImage displayedImage;
     private WritableImage displayBlackAndWhiteImage;
-    private WritableImage unselectedImage;
     private WritableImage unselectedBlackAndWhiteImage;
     private int fixedWidth;
     private int fixedHeight;
@@ -68,6 +68,9 @@ public class IdentificationSystemController implements Initializable {
     private PixelNode clickedNode;
     private PixelNode selectedNode;
     private Color clickedPixelColor;
+
+    private NodeBoundsController nodeBoundsController;
+    private Bounds selectedNodeBoundary;
 
     public final int MIN_NODE_SIZE;
     public final int MAX_CUSTOM_COLORS;
@@ -115,7 +118,7 @@ public class IdentificationSystemController implements Initializable {
         SATURATION_THRESHOLD = 0.3;
         BRIGHTNESS_THRESHOLD = 0.2;
 
-        ALERT_NO_IMAGE_LOADED = "Open an Image to get started!";
+        ALERT_NO_IMAGE_LOADED = "Click to open an Image!";
         ALERT_NO_COLORS_SELECTED = "No Colors Selected!";
         ALERT_NO_NODE_SELECTED = "No Leaf Selected!";
 
@@ -199,12 +202,12 @@ public class IdentificationSystemController implements Initializable {
             return;
         }
 
-        if (!hasColorsSelected() && !isValidColorSelection()) {
+        if (!hasColorsSelected() || !isValidColorSelection()) {
             showAlert(ALERT_NO_COLORS_SELECTED, AlertType.ERROR);
             return;
         }
 
-        if (selectedNode != null) {
+        if (selectedNode != null && selectedNodeBoundary != null) {
             clearNodeSelection();
         }
 
@@ -239,7 +242,7 @@ public class IdentificationSystemController implements Initializable {
         }
 
         // clear the current selection from the displayed image
-        if (selectedNode != null) {
+        if (selectedNode != null && selectedNodeBoundary != null) {
             clearNodeSelection();
         }
 
@@ -253,7 +256,7 @@ public class IdentificationSystemController implements Initializable {
 
         // draw node boundary rectangles
         NodeBoundsController controller = new NodeBoundsController(nodeController.getNodes(), fixedWidth, fixedHeight);
-        controller.drawNodeBounds(pane, stage.getScene(), NODE_NUMBER_TEXT_COLOR, NODE_BOUNDARY_COLOR, 8);
+        controller.drawNodeBounds(pane, stage.getScene(), NODE_NUMBER_TEXT_COLOR, NODE_BOUNDARY_COLOR);
     }
 
     @FXML
@@ -319,7 +322,7 @@ public class IdentificationSystemController implements Initializable {
         if (durationDialog.getResult() == null) return;
 
         // display the popup window
-        Pane pane = new Pane(new ImageView(unselectedImage));
+        Pane pane = new Pane(new ImageView(displayedImage));
         pane.setPrefSize(fixedWidth, fixedHeight);
 
         Stage stage = FXUtils.showPopupWindow("TSP Path | Press 'N' for numbering", pane, pane.getPrefWidth(), pane.getPrefHeight(), false);
@@ -328,20 +331,27 @@ public class IdentificationSystemController implements Initializable {
 
         // draw node boundary rectangles
         NodeBoundsController controller = new NodeBoundsController(nodeController.getNodes(), fixedWidth, fixedHeight);
-        controller.drawNodeBounds(pane, stage.getScene(), NODE_NUMBER_TEXT_COLOR, NODE_BOUNDARY_COLOR, 8);
+        controller.drawNodeBounds(pane, stage.getScene(), NODE_NUMBER_TEXT_COLOR, NODE_BOUNDARY_COLOR);
 
         // draw the animated connecting path
         List<Point2D> centerPoints = new MyArrayList<>();
+        List<Rectangle> rectangles = new MyArrayList<>();
 
         for (PixelNode node : nodeController.getNodes()) {
             centerPoints.add(node.getCenter());
         }
 
+        for (Node node : pane.getChildren()) {
+            if (node instanceof Rectangle) {
+                rectangles.add((Rectangle) node);
+            }
+        }
+
         AnimatedPathController pathController = new AnimatedPathController(centerPoints);
-        pathController.drawAnimatedPath(selectedNode.getCenter(), pane, animationDuration, Color.RED, 1);
+        pathController.drawAnimatedPath(selectedNode.getCenter(), rectangles, pane, animationDuration, Color.RED, 1);
 
         // clear the current selection from the displayed image
-        if (selectedNode != null) {
+        if (selectedNode != null && selectedNodeBoundary != null) {
             clearNodeSelection();
         }
     }
@@ -364,13 +374,18 @@ public class IdentificationSystemController implements Initializable {
     private void clearImage() {
         if (!isImageLoaded()) return;
 
-        // Only clear the image if the user selects ok
+        // only clear the image if the user selects ok
         if (!showConfirmationAlert("Are you sure you want to clear the Image?").equals(ButtonType.OK))
             return;
 
-        // clear image cluster data
+        // clear cluster data
         if (nodeController.hasNodes()) {
             nodeController.clearNodes();
+        }
+
+        // clear node bounds
+        if (nodeBoundsController != null && nodeBoundsController.HasBounds()) {
+            nodeBoundsController.clearBounds();
         }
 
         // clear image
@@ -380,14 +395,14 @@ public class IdentificationSystemController implements Initializable {
         // clear image data
         displayedImage = null;
         displayBlackAndWhiteImage = null;
-        unselectedImage = null;
         unselectedBlackAndWhiteImage = null;
         fixedWidth = 0;
         fixedHeight = 0;
 
-        // clear node controller and node data
+        // clear node selection
         clickedNode = null;
         selectedNode = null;
+        selectedNodeBoundary = null;
 
         setStatusBar(ALERT_NO_IMAGE_LOADED, true);
         setUserControlsActive(false);
@@ -514,23 +529,20 @@ public class IdentificationSystemController implements Initializable {
 
         // when the left mouse button is pressed, select the clicked node
         if (event.getButton() == MouseButton.PRIMARY) {
-
-            setStatusBar("Clicked Color: " + ColorUtils.getColorName(clickedPixelColor), true);
-
             nodeContextMenu.hide();
 
             if (!clickedNode.isValid()) {
                 nodeTooltip.hide();
 
                 // clear the selection if the clicked node is not valid
-                if (selectedNode != null) {
+                if (selectedNode != null && selectedNodeBoundary != null) {
                     clearNodeSelection();
                 }
             }
             else
             {
                 // set the clicked node as selected
-                if (selectedNode == null) {
+                if (selectedNode == null && selectedNodeBoundary == null) {
                     selectNode(clickedNode, Color.BLUE);
                 }
 
@@ -540,6 +552,8 @@ public class IdentificationSystemController implements Initializable {
 
         if (event.getButton() == MouseButton.SECONDARY) {
             if (clickedPixelColor == null) return;
+
+            setStatusBar("Selected Color: " + ColorUtils.getColorName(clickedPixelColor), true);
 
             // hide the tooltip if it is showing
             // this is necessary so that tooltip will be hidden when the context menu is shown
@@ -579,34 +593,38 @@ public class IdentificationSystemController implements Initializable {
     }
 
     public void selectNode(PixelNode node, Color color) {
-        unselectedImage = new WritableImage(displayedImage.getPixelReader(), fixedWidth, fixedHeight);
         unselectedBlackAndWhiteImage = new WritableImage(displayBlackAndWhiteImage.getPixelReader(), fixedWidth, fixedHeight);
 
-        setNodePixelColor(displayedImage, node, color);
         setNodePixelColor(displayBlackAndWhiteImage, node, color);
 
+        nodeBoundsController = new NodeBoundsController(nodeController.getNodes(), fixedWidth, fixedHeight);
+
+        selectedNodeBoundary = nodeBoundsController.addNodeBoundary(node, (Pane)borderPane.getCenter(), borderPane.getScene(), Color.TRANSPARENT, NODE_BOUNDARY_COLOR);
         selectedNode = node;
     }
 
     public void clearNodeSelection() {
-        if (unselectedImage == null && unselectedBlackAndWhiteImage == null) return;
+        if (unselectedBlackAndWhiteImage == null) return;
 
-        PixelWriter writer = displayedImage.getPixelWriter();
-        PixelReader reader = unselectedImage.getPixelReader();
-
-        PixelWriter blackAndWhiteWriter = displayBlackAndWhiteImage.getPixelWriter();
-        PixelReader blackAndWhiteReader = unselectedBlackAndWhiteImage.getPixelReader();
+        PixelReader reader = unselectedBlackAndWhiteImage.getPixelReader();
+        PixelWriter writer = displayBlackAndWhiteImage.getPixelWriter();
 
         // restore original image pixels
         for (int x = 0; x < fixedWidth; x++) {
             for (int y = 0; y < fixedHeight; y++) {
                 writer.setColor(x, y, reader.getColor(x, y));
-                blackAndWhiteWriter.setColor(x, y, blackAndWhiteReader.getColor(x, y));
             }
         }
 
+        if (nodeBoundsController != null && nodeBoundsController.HasBounds()) {
+            int x = (int) selectedNodeBoundary.getMin().getX();
+            int y = (int) selectedNodeBoundary.getMin().getY();
+
+            nodeBoundsController.removeNodeBoundary((Pane)borderPane.getCenter(), selectedNode.getRoot(), x, y);
+        }
+
         selectedNode = null;
-        unselectedImage = null;
+        selectedNodeBoundary = null;
         unselectedBlackAndWhiteImage = null;
     }
 
@@ -614,7 +632,7 @@ public class IdentificationSystemController implements Initializable {
         // clear the current selection
         clearColorSelection();
 
-        if (selectedNode != null) {
+        if (selectedNode != null && selectedNodeBoundary != null) {
             clearNodeSelection();
         }
 
@@ -679,7 +697,9 @@ public class IdentificationSystemController implements Initializable {
     }
 
     public boolean isValidColorSelection() {
-        return (!colorPicker.getValue().equals(Color.WHITE) || hasCustomColorsSelected()) && (nodeController.hasNodes());
+        if (!nodeController.hasNodes()) return false;
+
+        return !colorPicker.getValue().equals(Color.WHITE) || hasCustomColorsSelected();
     }
 
     public boolean isAutumnColor(Color color) {
@@ -740,5 +760,12 @@ public class IdentificationSystemController implements Initializable {
 
         setUserControlsActive(false);
         setStatusBar(ALERT_NO_IMAGE_LOADED, true);
+
+        // click on the image container to load an image
+        borderPane.getCenter().setOnMouseClicked(event -> {
+          if (!isImageLoaded() && event.getButton() == MouseButton.PRIMARY) {
+              loadImageFile();
+          }
+        });
     }
 }

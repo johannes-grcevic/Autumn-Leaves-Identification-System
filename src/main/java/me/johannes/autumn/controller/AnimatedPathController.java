@@ -28,9 +28,7 @@ public class AnimatedPathController {
         nn = new NearestNeighbor(pathPoints);
     }
 
-    public void drawAnimatedPath(Point2D start, Pane target, Duration duration, Color strokeColor, double strokeWidth) {
-        clearPath(); // clear the path before drawing a new one
-
+    public void drawAnimatedPath(Point2D start, List<Rectangle> boundaries, Pane target, Duration duration, Color strokeColor, double strokeWidth) {
         path.setStroke(strokeColor);
         path.setStrokeWidth(strokeWidth);
         path.setFill(Color.TRANSPARENT);
@@ -41,19 +39,9 @@ public class AnimatedPathController {
         // get the shortest path between the start and end points using the nearest neighbor algorithm
         List<Point2D> shortestPath = nn.findShortestPath(start);
 
-        // get all the rectangles in the target pane
-        List<Rectangle> unordered = new MyArrayList<>();
-
-        for (Node node : target.getChildren()) {
-            if (node instanceof Rectangle rectangle) {
-                unordered.add(rectangle);
-            }
-        }
-
-        // get all the rectangles in the target pane
         // sort rectangles to match the order of the path points by matching centers
         List<Rectangle> rectangles = new MyArrayList<>(shortestPath.size());
-        List<Rectangle> remaining = new MyArrayList<>(unordered);
+        List<Rectangle> remaining = new MyArrayList<>(boundaries);
 
         for (Point2D current : shortestPath) {
             Rectangle nearestRect = null;
