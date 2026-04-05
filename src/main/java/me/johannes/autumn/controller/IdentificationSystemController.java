@@ -77,6 +77,11 @@ public class IdentificationSystemController implements Initializable {
     private final Duration HOVER_DURATION_MILLISECONDS;
 
     private final Paint DEFAULT_STATUS_COLOR = Color.BLACK;
+    private final List<Color> AUTUMN_COLORS;
+
+    private final double HUE_TOLERANCE;
+    private final double SATURATION_THRESHOLD;
+    private final double BRIGHTNESS_THRESHOLD;
 
     private final String ALERT_NO_IMAGE_LOADED;
     private final String ALERT_NO_COLORS_SELECTED;
@@ -91,6 +96,20 @@ public class IdentificationSystemController implements Initializable {
         HOVER_SCALE_FACTOR = 1.03;
         // the duration of the button hover effect in milliseconds
         HOVER_DURATION_MILLISECONDS = Duration.millis(200);
+
+        // autumn color palette for automatic color selection
+        AUTUMN_COLORS = List.of(
+                Color.hsb(20, 0.8, 0.7),  // brown
+                Color.hsb(30, 0.9, 0.8),  // dark orange
+                Color.hsb(40, 0.9, 0.9)  // orange
+        );
+
+        // the tolerance in degrees for color matching
+        HUE_TOLERANCE = 5;
+
+        // the minimum saturation and brightness threshold for a color to be considered valid
+        SATURATION_THRESHOLD = 0.3;
+        BRIGHTNESS_THRESHOLD = 0.2;
 
         ALERT_NO_IMAGE_LOADED = "Open an Image to get started!";
         ALERT_NO_COLORS_SELECTED = "No Colors Selected!";
@@ -612,7 +631,7 @@ public class IdentificationSystemController implements Initializable {
                 Color pixelColor = reader.getColor(x, y);
 
                 // add the color to the color picker it's in the brown/orange range
-                if (ImageUtils.isAutumnLeaf(pixelColor)) {
+                if (isAutumnLeaf(pixelColor)) {
                     addCustomColor(pixelColor);
                 }
             }
@@ -621,10 +640,7 @@ public class IdentificationSystemController implements Initializable {
 
     public void createNodesFromImage(WritableImage source) {
         // black and white image based on user-selected colors
-        displayBlackAndWhiteImage = ImageUtils.getBlackAndWhite(source,
-                hasCustomColorsSelected() ? colorPicker.getCustomColors() : Collections.singletonList(colorPicker.getValue()),
-                0.3,
-                0.2);
+        displayBlackAndWhiteImage = ImageUtils.getBlackAndWhite(source, getSelectedColors(), HUE_TOLERANCE, SATURATION_THRESHOLD, BRIGHTNESS_THRESHOLD);
 
         PixelReader reader = displayBlackAndWhiteImage.getPixelReader();
 
@@ -654,6 +670,10 @@ public class IdentificationSystemController implements Initializable {
         if (!colorPicker.getCustomColors().contains(color)) {
             colorPicker.getCustomColors().add(color);
         }
+    }
+
+    public List<Color> getSelectedColors() {
+        return hasCustomColorsSelected() ? colorPicker.getCustomColors() : Collections.singletonList(colorPicker.getValue());
     }
 
     public boolean hasColorsSelected() {
@@ -697,6 +717,10 @@ public class IdentificationSystemController implements Initializable {
 
     public boolean isImageLoaded() {
         return imageFile != null;
+    }
+
+    public boolean isAutumnLeaf(Color color) {
+        return ImageUtils.isValidColor(color, AUTUMN_COLORS, HUE_TOLERANCE, SATURATION_THRESHOLD, BRIGHTNESS_THRESHOLD);
     }
 
     public void initializeNodeController(int imageSize) {
