@@ -847,6 +847,8 @@ public class IdentificationSystemController implements Initializable {
     }
 
     public void load() throws Exception {
+        if (!App.getSaveFile().exists()) return;
+
         var xstream = new XStream(new PureJavaReflectionProvider());
 
         // read the xml file
