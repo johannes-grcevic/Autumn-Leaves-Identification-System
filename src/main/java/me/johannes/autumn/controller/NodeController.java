@@ -74,9 +74,6 @@ public class NodeController {
                 nodes.get(rootNode).addPixelIndex(index);
             }
         }
-
-        System.out.println("Nodes created: " + nodes.size());
-        System.out.println("Valid nodes: " + getNodeCount());
     }
 
     public PixelNode getNode(int x, int y, int width, int height) {

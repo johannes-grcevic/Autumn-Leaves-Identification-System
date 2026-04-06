@@ -7,6 +7,7 @@ import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Objects;
@@ -16,6 +17,7 @@ import java.util.Objects;
  */
 public class App extends Application {
     private static Image iconImage;
+    private static final File saveFile = new File("userSettings.xml");
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -53,6 +55,10 @@ public class App extends Application {
 
     public static Image getIconImage() {
         return iconImage;
+    }
+
+    public static File getSaveFile() {
+        return saveFile;
     }
 
     // start the application

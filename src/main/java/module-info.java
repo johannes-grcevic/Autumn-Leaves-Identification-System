@@ -7,7 +7,7 @@ module me.johannes.autumn {
     requires xstream;
 
     opens me.johannes.autumn.main to javafx.fxml;
-    opens me.johannes.autumn.controller to javafx.fxml;
+    opens me.johannes.autumn.controller to javafx.fxml, xstream;
 
     exports me.johannes.autumn.main;
     exports me.johannes.autumn.controller;

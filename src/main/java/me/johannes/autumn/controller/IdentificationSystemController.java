@@ -1,7 +1,8 @@
 package me.johannes.autumn.controller;
 
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
+import com.thoughtworks.xstream.converters.reflection.PureJavaReflectionProvider;
+
 import javafx.application.Platform;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
@@ -65,8 +66,6 @@ public class IdentificationSystemController implements Initializable {
     private final MenuItem addToColorPickerMenuItem;
 
     private File imageFile;
-    private File saveFile;
-
     private WritableImage displayedImage;
     private WritableImage displayBlackAndWhiteImage;
     private WritableImage unselectedBlackAndWhiteImage;
@@ -107,6 +106,7 @@ public class IdentificationSystemController implements Initializable {
     public final String ALERT_NO_IMAGE_LOADED;
     public final String ALERT_NO_COLORS_SELECTED;
     public final String ALERT_NO_NODE_SELECTED;
+    public final String CONFIRMATION_QUIT_APPLICATION;
 
     public IdentificationSystemController() {
         // the minimum size for a leaf node to be considered valid
@@ -136,6 +136,7 @@ public class IdentificationSystemController implements Initializable {
         ALERT_NO_IMAGE_LOADED = "Click to open an Image!";
         ALERT_NO_COLORS_SELECTED = "No Colors Selected!";
         ALERT_NO_NODE_SELECTED = "No Leaf Selected!";
+        CONFIRMATION_QUIT_APPLICATION = "Are you sure you want to Quit? Unsaved changes will be lost!";
 
         nodeTooltip = new Tooltip();
         nodeTooltip.setAutoHide(true);
@@ -433,9 +434,8 @@ public class IdentificationSystemController implements Initializable {
 
     @FXML
     private void quitApplication() {
-        // Only quit if the user selects ok
-        if (!showConfirmationAlert("Are you sure you want to Quit?").equals(ButtonType.OK))
-            return;
+        // quit the application if the user selects ok
+        if (!showConfirmationAlert(CONFIRMATION_QUIT_APPLICATION).equals(ButtonType.OK)) return;
 
         // Close the application
         System.exit(0);
@@ -624,7 +624,7 @@ public class IdentificationSystemController implements Initializable {
         }
     }
 
-    protected void onSaveButtonClicked(ActionEvent actionEvent) {
+    protected void onSaveButtonClicked(ActionEvent event) {
         try {
             save();
         } catch (Exception e) {
@@ -632,7 +632,7 @@ public class IdentificationSystemController implements Initializable {
         }
     }
 
-    protected void onRestoreButtonClicked(ActionEvent actionEvent) {
+    protected void onRestoreButtonClicked(ActionEvent event) {
         setDefaultUserControlValues();
     }
 
@@ -808,6 +808,8 @@ public class IdentificationSystemController implements Initializable {
         saturationSlider.setDisable(!value);
         brightnessSlider.setDisable(!value);
         nodeSizeSpinner.setDisable(!value);
+        restoreButton.setDisable(!value);
+        saveButton.setDisable(!value);
     }
 
     public void setDefaultUserControlValues() {
@@ -823,29 +825,39 @@ public class IdentificationSystemController implements Initializable {
     }
 
     public void save() throws Exception {
-        var xstream = new XStream(new DomDriver());
+        var xstream = new XStream(new PureJavaReflectionProvider());
+        File file = App.getSaveFile();
 
-        ObjectOutputStream os = xstream.createObjectOutputStream(new FileWriter(saveFile));
-        os.writeObject(this);
+        // serialize to an xml file
+        ObjectOutputStream os = xstream.createObjectOutputStream(new FileWriter(file));
+
+        // save the values to the xml file
+        os.writeDouble(saturationSlider.getValue());
+        os.writeDouble(brightnessSlider.getValue());
+        os.writeInt(nodeSizeSpinner.getValue());
+
         os.close();
+
+        if (file.exists() && file.length() > 0) {
+            System.out.println("Saved File: " + "'"+ file.getName() + "'" + " and Size: " + file.length() + " bytes. ");
+        }
+        else {
+            System.err.println("Failed to Save File: " + "'"+ file.getName() + "'" + " and Size: " + file.length() + " bytes. ");
+        }
     }
 
     public void load() throws Exception {
-        // list of classes that you wish to include in the serialization, separated by a comma
-        Class<?>[] classes = new Class[] {
-            Node.class,
-        };
+        var xstream = new XStream(new PureJavaReflectionProvider());
 
-        // setting up the xstream object with default security and the above classes
-        XStream xstream = new XStream(new DomDriver());
-        xstream.allowTypes(classes);
+        // read the xml file
+        ObjectInputStream in = xstream.createObjectInputStream(new FileReader(App.getSaveFile()));
 
-        // doing the actual serialization to an XML file
-        ObjectInputStream in = xstream.createObjectInputStream(new FileReader(saveFile));
+        // load the values from the xml file
+        saturationSlider.setValue(in.readDouble());
+        brightnessSlider.setValue(in.readDouble());
+        NODE_SIZE_VALUE_FACTORY.setValue(in.readInt());
 
-        Node node = (Node) in.readObject();
         in.close();
-
     }
 
     public boolean isImageLoaded() {
@@ -894,10 +906,12 @@ public class IdentificationSystemController implements Initializable {
         // show the default status message
         setStatusBar(ALERT_NO_IMAGE_LOADED, true);
 
+        // load user settings
         try {
             load();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        }
+        catch (Exception e) {
+            System.err.println(Arrays.toString(e.getStackTrace()));
         }
     }
 }
