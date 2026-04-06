@@ -4,6 +4,7 @@ module me.johannes.autumn {
     requires java.desktop;
     requires java.compiler;
     requires java.naming;
+    requires xstream;
 
     opens me.johannes.autumn.main to javafx.fxml;
     opens me.johannes.autumn.controller to javafx.fxml;

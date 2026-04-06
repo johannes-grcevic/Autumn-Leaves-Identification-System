@@ -1,11 +1,11 @@
-.menuBar {
+.menu-bar {
     -fx-background-color: LightGray;
     -fx-border-radius: 25px;
     -fx-background-radius: 5px;
     -fx-cursor: hand;
 }
 
-.menuBar:hover {
+.menu-bar:hover {
     -fx-background-color: LightBlue;
     -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.2), 10, 0, 0, 0);
 }
@@ -14,11 +14,51 @@
     -fx-background-color: LightGray;
     -fx-border-radius: 25px;
     -fx-background-radius: 5px;
-    -fx-animated: true;
     -fx-cursor: hand;
 }
 
 .button:hover {
+    -fx-background-color: LightBlue;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.2), 10, 0, 0, 0);
+}
+
+.slider {
+    -fx-background-color: LightGray;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-cursor: hand;
+}
+
+.slider .thumb {
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-cursor: hand;
+}
+
+.slider:hover {
+    -fx-background-color: LightBlue;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.2), 10, 0, 0, 0);
+}
+
+.spinner {
+    -fx-background-color: LightGray;
+    -fx-border-radius: 25px;
+    -fx-background-radius: 5px;
+    -fx-cursor: hand;
+}
+
+.spinner:hover {
+    -fx-background-color: LightBlue;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.2), 10, 0, 0, 0);
+}
+
+.spinner .increment-arrow-button, .spinner .decrement-arrow-button {
+    -fx-background-color: LightGray;
+    -fx-border-radius: 5px;
+    -fx-cursor: hand;
+}
+
+.spinner .increment-arrow-button:hover, .spinner .decrement-arrow-button:hover {
     -fx-background-color: LightBlue;
     -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.2), 10, 0, 0, 0);
 }
@@ -34,7 +74,7 @@
     -fx-cursor: hand;
 }
 
-.borderPane {
+.border-pane {
     -fx-background-image: url("background.png");
     -fx-background-color: rgba(255, 255, 255, 0.8);
     -fx-background-size: cover;
@@ -43,7 +83,7 @@
     -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.5), 10, 0, 0, 0);
 }
 
-.centerPane {
+.border-center-pane {
     -fx-background-image: url("no_image.jpg");
     -fx-background-color: rgba(255, 255, 255, 0.6);
     -fx-background-radius: 5px;
@@ -54,6 +94,6 @@
     -fx-cursor: hand;
 }
 
-.centerPane:hover {
+.border-center-pane:hover {
     -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.7), 10, 0, 0, 0);
 }

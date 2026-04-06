@@ -1,5 +1,7 @@
 package me.johannes.autumn.controller;
 
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.xml.DomDriver;
 import javafx.application.Platform;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
@@ -31,8 +33,9 @@ import me.johannes.autumn.model.PixelNode;
 import me.johannes.autumn.util.ColorUtils;
 import me.johannes.autumn.util.FXUtils;
 import me.johannes.autumn.util.ImageUtils;
+import me.johannes.autumn.util.StringUtils;
 
-import java.io.File;
+import java.io.*;
 import java.net.URL;
 import java.util.*;
 
@@ -49,20 +52,26 @@ public class IdentificationSystemController implements Initializable {
     @FXML
     private Label statusLabel;
     @FXML
-    private Button autoSelectColorsButton;
+    private Button clearColorSelectionButton, autoSelectColorsButton;
     @FXML
-    private Button clearColorSelectionButton;
+    private Button restoreButton, saveButton;
+    @FXML
+    private Slider saturationSlider, brightnessSlider;
+    @FXML
+    private Spinner<Integer> nodeSizeSpinner;
 
     private final Tooltip nodeTooltip;
     private final ContextMenu nodeContextMenu;
     private final MenuItem addToColorPickerMenuItem;
 
     private File imageFile;
+    private File saveFile;
+
     private WritableImage displayedImage;
     private WritableImage displayBlackAndWhiteImage;
     private WritableImage unselectedBlackAndWhiteImage;
-    private int fixedWidth;
-    private int fixedHeight;
+    private int containerWidth;
+    private int containerHeight;
 
     private NodeController nodeController;
     private PixelNode clickedNode;
@@ -72,22 +81,28 @@ public class IdentificationSystemController implements Initializable {
     private NodeBoundsController nodeBoundsController;
     private Bounds selectedNodeBoundary;
 
-    public final int MIN_NODE_SIZE;
+    public double saturationThreshold;
+    public double brightnessThreshold;
+    public int minNodeSize;
+
+    public final SpinnerValueFactory.IntegerSpinnerValueFactory NODE_SIZE_VALUE_FACTORY;
+    public final Random RANDOM_GENERATOR = new Random();
+
     public final int MAX_CUSTOM_COLORS;
     public final double HOVER_SCALE_FACTOR;
     public final Duration HOVER_DURATION_MILLISECONDS;
 
-    public final Random RANDOM_GENERATOR = new Random();
-
     public final Color DEFAULT_STATUS_COLOR = Color.BLACK;
+    public final int DEFAULT_MIN_NODE_SIZE = 55;
+    public final double DEFAULT_SATURATION_THRESHOLD = 0.3;
+    public final double DEFAULT_BRIGHTNESS_THRESHOLD = 0.2;
+
     public final Color SELECTED_NODE_COLOR = Color.RED;
     public final Color NODE_BOUNDARY_COLOR = Color.BLUE;
     public final Color NODE_NUMBER_TEXT_COLOR = Color.BLACK;
     public final List<Color> AUTUMN_COLOR_PALETTE;
 
     public final double HUE_TOLERANCE;
-    public final double SATURATION_THRESHOLD;
-    public final double BRIGHTNESS_THRESHOLD;
 
     public final String ALERT_NO_IMAGE_LOADED;
     public final String ALERT_NO_COLORS_SELECTED;
@@ -95,7 +110,7 @@ public class IdentificationSystemController implements Initializable {
 
     public IdentificationSystemController() {
         // the minimum size for a leaf node to be considered valid
-        MIN_NODE_SIZE = 55;
+        minNodeSize = DEFAULT_MIN_NODE_SIZE;
         // the maximum number of custom colors that can be selected by the user
         MAX_CUSTOM_COLORS = 120;
 
@@ -115,8 +130,8 @@ public class IdentificationSystemController implements Initializable {
         HUE_TOLERANCE = 5;
 
         // the minimum saturation and brightness threshold for a color to be considered valid
-        SATURATION_THRESHOLD = 0.3;
-        BRIGHTNESS_THRESHOLD = 0.2;
+        saturationThreshold = DEFAULT_SATURATION_THRESHOLD;
+        brightnessThreshold = DEFAULT_BRIGHTNESS_THRESHOLD;
 
         ALERT_NO_IMAGE_LOADED = "Click to open an Image!";
         ALERT_NO_COLORS_SELECTED = "No Colors Selected!";
@@ -128,8 +143,13 @@ public class IdentificationSystemController implements Initializable {
         nodeContextMenu = new ContextMenu();
         addToColorPickerMenuItem = new MenuItem("Add to Color Picker");
         nodeContextMenu.getItems().add(addToColorPickerMenuItem);
+
+        NODE_SIZE_VALUE_FACTORY = new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100, minNodeSize);
     }
 
+    // -------------------------------------------------------------------------
+    //  FXML Methods
+    // -------------------------------------------------------------------------
     @FXML
     private void loadImageFile() {
         FileChooser fileChooser = new FileChooser();
@@ -156,22 +176,22 @@ public class IdentificationSystemController implements Initializable {
         imageFile = file;
         String imageURL = String.valueOf(imageFile.toURI());
 
-        // set the image dimensions based on the image center pane size
+        // set the image dimensions based on the image center pane container
         Pane imageContainer = (Pane) borderPane.getCenter();
-        fixedWidth = (int) imageContainer.getWidth();
-        fixedHeight = (int) imageContainer.getHeight();
+        containerWidth = (int) imageContainer.getWidth();
+        containerHeight = (int) imageContainer.getHeight();
 
-        // resize the original image to fit the center pane
-        Image originalColorImage = new Image(imageURL, fixedWidth, fixedHeight, false, false);
+        // resize the original image to fit the center pane container
+        Image originalColorImage = new Image(imageURL, containerWidth, containerHeight, false, false);
 
         // initialize the image view with the display image
-        displayedImage = new WritableImage(originalColorImage.getPixelReader(), fixedWidth, fixedHeight);
+        displayedImage = new WritableImage(originalColorImage.getPixelReader(), containerWidth, containerHeight);
         imageView.setImage(displayedImage);
 
-        // initialize the node controller with the image dimensions
-        initNodeController(fixedWidth, fixedHeight);
+        // initialize the node controller with the container width and height
+        initNodeController(containerWidth, containerHeight);
 
-        // disable the interactive features of the app until the image is loaded
+        // enable the user controls after the image is loaded
         setUserControlsActive(true);
     }
 
@@ -188,7 +208,7 @@ public class IdentificationSystemController implements Initializable {
         }
 
         Pane pane = new Pane(new ImageView(displayBlackAndWhiteImage));
-        pane.setPrefSize(fixedWidth, fixedHeight);
+        pane.setPrefSize(containerWidth, containerHeight);
 
         Stage stage = FXUtils.showPopupWindow("Black and White", pane, pane.getPrefWidth(), pane.getPrefHeight(), false);
         stage.getScene().getStylesheets().add(Objects.requireNonNull(App.getStylesheet("style")));
@@ -213,7 +233,7 @@ public class IdentificationSystemController implements Initializable {
 
         if (displayBlackAndWhiteImage == null) return;
 
-        WritableImage randomColoredImage = new WritableImage(displayBlackAndWhiteImage.getPixelReader(), fixedWidth, fixedHeight);
+        WritableImage randomColoredImage = new WritableImage(displayBlackAndWhiteImage.getPixelReader(), containerWidth, containerHeight);
         List<PixelNode> nodes = nodeController.getNodes();
 
         for (PixelNode node : nodes) {
@@ -222,7 +242,7 @@ public class IdentificationSystemController implements Initializable {
         }
 
         Pane pane = new Pane(new ImageView(randomColoredImage));
-        pane.setPrefSize(fixedWidth, fixedHeight);
+        pane.setPrefSize(containerWidth, containerHeight);
 
         Stage stage = FXUtils.showPopupWindow("Random Colors", pane, pane.getPrefWidth(), pane.getPrefHeight(), false);
         stage.getScene().getStylesheets().add(Objects.requireNonNull(App.getStylesheet("style")));
@@ -247,7 +267,7 @@ public class IdentificationSystemController implements Initializable {
         }
 
         Pane pane = new Pane(new ImageView(displayedImage));
-        pane.setPrefSize(fixedWidth, fixedHeight);
+        pane.setPrefSize(containerWidth, containerHeight);
 
         // display the bound popup window
         Stage stage = FXUtils.showPopupWindow("Bounds | Press 'N' for numbering", pane, pane.getPrefWidth(), pane.getPrefHeight(), false);
@@ -255,7 +275,7 @@ public class IdentificationSystemController implements Initializable {
         stage.getIcons().add(App.getIconImage());
 
         // draw node boundary rectangles
-        NodeBoundsController controller = new NodeBoundsController(nodeController.getNodes(), fixedWidth, fixedHeight);
+        NodeBoundsController controller = new NodeBoundsController(nodeController.getNodes(), containerWidth, containerHeight);
         controller.drawNodeBounds(pane, stage.getScene(), NODE_NUMBER_TEXT_COLOR, NODE_BOUNDARY_COLOR);
     }
 
@@ -323,14 +343,14 @@ public class IdentificationSystemController implements Initializable {
 
         // display the popup window
         Pane pane = new Pane(new ImageView(displayedImage));
-        pane.setPrefSize(fixedWidth, fixedHeight);
+        pane.setPrefSize(containerWidth, containerHeight);
 
         Stage stage = FXUtils.showPopupWindow("TSP Path | Press 'N' for numbering", pane, pane.getPrefWidth(), pane.getPrefHeight(), false);
         stage.getScene().getStylesheets().add(Objects.requireNonNull(App.getStylesheet("style")));
         stage.getIcons().add(App.getIconImage());
 
         // draw node boundary rectangles
-        NodeBoundsController controller = new NodeBoundsController(nodeController.getNodes(), fixedWidth, fixedHeight);
+        NodeBoundsController controller = new NodeBoundsController(nodeController.getNodes(), containerWidth, containerHeight);
         controller.drawNodeBounds(pane, stage.getScene(), NODE_NUMBER_TEXT_COLOR, NODE_BOUNDARY_COLOR);
 
         // draw the animated connecting path
@@ -396,8 +416,8 @@ public class IdentificationSystemController implements Initializable {
         displayedImage = null;
         displayBlackAndWhiteImage = null;
         unselectedBlackAndWhiteImage = null;
-        fixedWidth = 0;
-        fixedHeight = 0;
+        containerWidth = 0;
+        containerHeight = 0;
 
         // clear node selection
         clickedNode = null;
@@ -421,7 +441,9 @@ public class IdentificationSystemController implements Initializable {
         System.exit(0);
     }
 
-    // Events //
+    // -------------------------------------------------------------------------
+    // Event Handlers
+    // -------------------------------------------------------------------------
     protected void onImageChanged(ObservableValue<?> value, Image oldValue, Image newValue) {
         if (!isImageLoaded()) return;
 
@@ -525,7 +547,7 @@ public class IdentificationSystemController implements Initializable {
         clickedPixelColor = displayedImage.getPixelReader().getColor(x, y);
 
         // set the current clicked node
-        clickedNode = nodeController.getNode(x, y, fixedWidth, fixedHeight);
+        clickedNode = nodeController.getNode(x, y, containerWidth, containerHeight);
 
         // when the left mouse button is pressed, select the clicked node
         if (event.getButton() == MouseButton.PRIMARY) {
@@ -564,7 +586,59 @@ public class IdentificationSystemController implements Initializable {
         }
     }
 
-    // Utility //
+    protected void onSaturationSliderValueChanged(ObservableValue<?> value, Number oldValue, Number newValue) {
+        saturationThreshold = newValue.doubleValue();
+
+        setStatusBar("Saturation Threshold: " + Math.floor(saturationThreshold * 100) / 100 +
+                " (" + StringUtils.toPercentageOf(saturationThreshold, 1) + ")", true);
+    }
+
+    protected void onBrightnessSliderValueChanged(ObservableValue<?> value, Number oldValue, Number newValue) {
+        brightnessThreshold = newValue.doubleValue();
+        setStatusBar("Brightness Threshold: " + Math.floor(brightnessThreshold * 100) / 100 +
+                " (" + StringUtils.toPercentageOf(brightnessThreshold, 1) + ")", true);
+    }
+
+    private void onNodeSizeValueChanged(ObservableValue<?> value, Number oldValue, Number newValue) {
+        NODE_SIZE_VALUE_FACTORY.setValue(newValue.intValue());
+        minNodeSize = NODE_SIZE_VALUE_FACTORY.getValue();
+
+        setStatusBar("Minimum Node Size: " + minNodeSize, true);
+    }
+
+    protected void onBorderPaneMouseClicked(MouseEvent event) {
+        if (!isImageLoaded() || (selectedNode == null && selectedNodeBoundary == null)) return;
+
+        // Convert scene coordinates to ImageView's local coordinates
+        Point2D localClickedPosition = imageView.sceneToLocal(event.getSceneX(), event.getSceneY());
+        boolean isImageViewClicked = imageView.contains(localClickedPosition);
+
+        if (event.getButton() == MouseButton.PRIMARY && !isImageViewClicked) {
+            clearNodeSelection();
+        }
+    }
+
+    protected void onBorderPaneCenterMouseClicked(MouseEvent event) {
+        if (!isImageLoaded() && event.getButton() == MouseButton.PRIMARY) {
+            loadImageFile();
+        }
+    }
+
+    protected void onSaveButtonClicked(ActionEvent actionEvent) {
+        try {
+            save();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected void onRestoreButtonClicked(ActionEvent actionEvent) {
+        setDefaultUserControlValues();
+    }
+
+    // -------------------------------------------------------------------------
+    // Utility Methods
+    // -------------------------------------------------------------------------
     public void showNodeTooltip(Node source, double x, double y) {
         int index = nodeController.getNodeIndex(clickedNode) + 1;
         int pixelCount = clickedNode.getPixelCount();
@@ -585,19 +659,19 @@ public class IdentificationSystemController implements Initializable {
         PixelWriter writer = source.getPixelWriter();
 
         for (Integer index : node.pixelIndexes()) {
-            int x = index % fixedWidth;
-            int y = index / fixedWidth;
+            int x = index % containerWidth;
+            int y = index / containerWidth;
 
             writer.setColor(x, y, color);
         }
     }
 
     public void selectNode(PixelNode node, Color color) {
-        unselectedBlackAndWhiteImage = new WritableImage(displayBlackAndWhiteImage.getPixelReader(), fixedWidth, fixedHeight);
+        unselectedBlackAndWhiteImage = new WritableImage(displayBlackAndWhiteImage.getPixelReader(), containerWidth, containerHeight);
 
         setNodePixelColor(displayBlackAndWhiteImage, node, color);
 
-        nodeBoundsController = new NodeBoundsController(nodeController.getNodes(), fixedWidth, fixedHeight);
+        nodeBoundsController = new NodeBoundsController(nodeController.getNodes(), containerWidth, containerHeight);
 
         selectedNodeBoundary = nodeBoundsController.addNodeBoundary(node, (Pane)borderPane.getCenter(), borderPane.getScene(), Color.TRANSPARENT, NODE_BOUNDARY_COLOR);
         selectedNode = node;
@@ -610,8 +684,8 @@ public class IdentificationSystemController implements Initializable {
         PixelWriter writer = displayBlackAndWhiteImage.getPixelWriter();
 
         // restore original image pixels
-        for (int x = 0; x < fixedWidth; x++) {
-            for (int y = 0; y < fixedHeight; y++) {
+        for (int x = 0; x < containerWidth; x++) {
+            for (int y = 0; y < containerHeight; y++) {
                 writer.setColor(x, y, reader.getColor(x, y));
             }
         }
@@ -638,8 +712,8 @@ public class IdentificationSystemController implements Initializable {
 
         PixelReader reader = displayedImage.getPixelReader();
 
-        for (int x = 0; x < fixedWidth; x++) {
-            for (int y = 0; y < fixedHeight; y++) {
+        for (int x = 0; x < containerWidth; x++) {
+            for (int y = 0; y < containerHeight; y++) {
                 Color pixelColor = reader.getColor(x, y);
 
                 // add the color to the color picker it's in the brown/orange range
@@ -652,21 +726,21 @@ public class IdentificationSystemController implements Initializable {
 
     public void createNodesFromImage(WritableImage source) {
         // black and white image based on user-selected colors
-        displayBlackAndWhiteImage = ImageUtils.getBlackAndWhite(source, getSelectedColors(), HUE_TOLERANCE, SATURATION_THRESHOLD, BRIGHTNESS_THRESHOLD);
+        displayBlackAndWhiteImage = ImageUtils.getBlackAndWhite(source, getSelectedColors(), HUE_TOLERANCE, saturationThreshold, brightnessThreshold);
 
         PixelReader reader = displayBlackAndWhiteImage.getPixelReader();
 
         // create clusters from the black and white image
         if (!nodeController.hasNodes() && hasColorsSelected()) {
-            nodeController.createNodes(fixedWidth, fixedHeight, MIN_NODE_SIZE, reader, Color.BLACK);
+            nodeController.createNodes(containerWidth, containerHeight, minNodeSize, reader, Color.BLACK);
         }
 
         // create a new black and white image with the processed pixels
         PixelWriter writer = displayBlackAndWhiteImage.getPixelWriter();
 
         // fill the image with black pixels
-        for (int y = 0; y < fixedHeight; y++) {
-            for (int x = 0; x < fixedWidth; x++) {
+        for (int y = 0; y < containerHeight; y++) {
+            for (int x = 0; x < containerWidth; x++) {
                 writer.setColor(x, y, Color.BLACK);
             }
         }
@@ -703,7 +777,7 @@ public class IdentificationSystemController implements Initializable {
     }
 
     public boolean isAutumnColor(Color color) {
-        return ImageUtils.isValidColor(color, AUTUMN_COLOR_PALETTE, HUE_TOLERANCE, SATURATION_THRESHOLD, BRIGHTNESS_THRESHOLD);
+        return ImageUtils.isValidColor(color, AUTUMN_COLOR_PALETTE, HUE_TOLERANCE, saturationThreshold, brightnessThreshold);
     }
 
     public void setStatusBar(String message, boolean visible) {
@@ -731,13 +805,56 @@ public class IdentificationSystemController implements Initializable {
         autoSelectColorsButton.setDisable(!value);
         clearColorSelectionButton.setDisable(!value);
         colorPicker.setDisable(!value);
+        saturationSlider.setDisable(!value);
+        brightnessSlider.setDisable(!value);
+        nodeSizeSpinner.setDisable(!value);
+    }
+
+    public void setDefaultUserControlValues() {
+        saturationThreshold = DEFAULT_SATURATION_THRESHOLD;
+        brightnessThreshold = DEFAULT_BRIGHTNESS_THRESHOLD;
+
+        minNodeSize = DEFAULT_MIN_NODE_SIZE;
+        NODE_SIZE_VALUE_FACTORY.setValue(minNodeSize);
+
+        saturationSlider.setValue(saturationThreshold);
+        brightnessSlider.setValue(brightnessThreshold);
+        nodeSizeSpinner.setValueFactory(NODE_SIZE_VALUE_FACTORY);
+    }
+
+    public void save() throws Exception {
+        var xstream = new XStream(new DomDriver());
+
+        ObjectOutputStream os = xstream.createObjectOutputStream(new FileWriter(saveFile));
+        os.writeObject(this);
+        os.close();
+    }
+
+    public void load() throws Exception {
+        // list of classes that you wish to include in the serialization, separated by a comma
+        Class<?>[] classes = new Class[] {
+            Node.class,
+        };
+
+        // setting up the xstream object with default security and the above classes
+        XStream xstream = new XStream(new DomDriver());
+        xstream.allowTypes(classes);
+
+        // doing the actual serialization to an XML file
+        ObjectInputStream in = xstream.createObjectInputStream(new FileReader(saveFile));
+
+        Node node = (Node) in.readObject();
+        in.close();
+
     }
 
     public boolean isImageLoaded() {
         return imageFile != null;
     }
 
-    // Initialization //
+    // -------------------------------------------------------------------------
+    // Initialization Methods
+    // -------------------------------------------------------------------------
     public void initNodeController(int width, int height) {
         nodeController = new NodeController(width * height);
     }
@@ -750,22 +867,37 @@ public class IdentificationSystemController implements Initializable {
         imageView.imageProperty().addListener(this::onImageChanged);
         imageView.setOnMouseClicked(this::onImageViewMouseClicked);
 
+        borderPane.setOnMouseClicked(this::onBorderPaneMouseClicked);
+        borderPane.getCenter().setOnMouseClicked(this::onBorderPaneCenterMouseClicked);
+
         autoSelectColorsButton.setOnAction(this::onAutoSelectButtonClicked);
         addToColorPickerMenuItem.setOnAction(this::onAddToColorPickerClicked);
+
+        restoreButton.setOnAction(this::onRestoreButtonClicked);
+        saveButton.setOnAction(this::onSaveButtonClicked);
+
+        saturationSlider.valueProperty().addListener(this::onSaturationSliderValueChanged);
+        brightnessSlider.valueProperty().addListener(this::onBrightnessSliderValueChanged);
+        nodeSizeSpinner.valueProperty().addListener(this::onNodeSizeValueChanged);
+
+        // set the initial values of the sliders and spinner
+        setDefaultUserControlValues();
 
         // add hover scale animation to the buttons
         FXUtils.addHoverScaleAnimation(autoSelectColorsButton, HOVER_SCALE_FACTOR, HOVER_DURATION_MILLISECONDS);
         FXUtils.addHoverScaleAnimation(clearColorSelectionButton, HOVER_SCALE_FACTOR, HOVER_DURATION_MILLISECONDS);
         FXUtils.addHoverScaleAnimation(colorPicker, HOVER_SCALE_FACTOR, HOVER_DURATION_MILLISECONDS);
 
+        // disable the user controls until an image is loaded
         setUserControlsActive(false);
+
+        // show the default status message
         setStatusBar(ALERT_NO_IMAGE_LOADED, true);
 
-        // click on the image container to load an image
-        borderPane.getCenter().setOnMouseClicked(event -> {
-          if (!isImageLoaded() && event.getButton() == MouseButton.PRIMARY) {
-              loadImageFile();
-          }
-        });
+        try {
+            load();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
