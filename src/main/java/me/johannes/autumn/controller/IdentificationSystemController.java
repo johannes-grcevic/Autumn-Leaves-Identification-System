@@ -82,42 +82,38 @@ public class IdentificationSystemController implements Initializable {
 
     public double saturationThreshold;
     public double brightnessThreshold;
-    public int minNodeSize;
+    public int currentNodeSize;
 
     public final SpinnerValueFactory.IntegerSpinnerValueFactory NODE_SIZE_VALUE_FACTORY;
     public final Random RANDOM_GENERATOR = new Random();
 
-    public final int MAX_CUSTOM_COLORS;
-    public final double HOVER_SCALE_FACTOR;
-    public final Duration HOVER_DURATION_MILLISECONDS;
+    public final int MAX_CUSTOM_COLORS = 120;
+    public final double HOVER_SCALE_FACTOR = 1.03;
+    public final Duration HOVER_DURATION_MILLISECONDS = Duration.millis(200.0);
 
     public final Color DEFAULT_STATUS_COLOR = Color.BLACK;
-    public final int DEFAULT_MIN_NODE_SIZE = 55;
     public final double DEFAULT_SATURATION_THRESHOLD = 0.3;
     public final double DEFAULT_BRIGHTNESS_THRESHOLD = 0.2;
+    public final int MIN_NODE_SIZE = 55;
+    public final int MAX_NODE_SIZE = 100;
 
     public final Color SELECTED_NODE_COLOR = Color.RED;
     public final Color NODE_BOUNDARY_COLOR = Color.BLUE;
     public final Color NODE_NUMBER_TEXT_COLOR = Color.BLACK;
     public final List<Color> AUTUMN_COLOR_PALETTE;
 
-    public final double HUE_TOLERANCE;
+    // the tolerance in degrees for color matching
+    public final double HUE_TOLERANCE = 5.0;
 
-    public final String ALERT_NO_IMAGE_LOADED;
-    public final String ALERT_NO_COLORS_SELECTED;
-    public final String ALERT_NO_NODE_SELECTED;
-    public final String CONFIRMATION_QUIT_APPLICATION;
+    public final String ALERT_NO_IMAGE_LOADED = "Click to open an Image";
+    public final String ALERT_NO_COLORS_SELECTED = "No Colors Selected!";
+    public final String ALERT_NO_NODE_SELECTED = "No Leaf Selected!";
+    public final String CONFIRMATION_QUIT_APPLICATION = "Are you sure you want to Quit? Unsaved changes will be lost!";
 
     public IdentificationSystemController() {
         // the minimum size for a leaf node to be considered valid
-        minNodeSize = DEFAULT_MIN_NODE_SIZE;
-        // the maximum number of custom colors that can be selected by the user
-        MAX_CUSTOM_COLORS = 120;
-
-        // the scale factor for buttons when hovered over
-        HOVER_SCALE_FACTOR = 1.03;
-        // the duration of the button hover effect in milliseconds
-        HOVER_DURATION_MILLISECONDS = Duration.millis(200);
+        currentNodeSize = MIN_NODE_SIZE;
+        NODE_SIZE_VALUE_FACTORY = new SpinnerValueFactory.IntegerSpinnerValueFactory(MIN_NODE_SIZE, MAX_NODE_SIZE, MIN_NODE_SIZE);
 
         // autumn color palette for automatic color selection
         AUTUMN_COLOR_PALETTE = List.of(
@@ -126,26 +122,14 @@ public class IdentificationSystemController implements Initializable {
                 Color.hsb(40, 0.9, 0.9)  // orange
         );
 
-        // the tolerance in degrees for color matching
-        HUE_TOLERANCE = 5;
-
-        // the minimum saturation and brightness threshold for a color to be considered valid
+        // minimum saturation and brightness threshold for a pixel color to be valid
         saturationThreshold = DEFAULT_SATURATION_THRESHOLD;
         brightnessThreshold = DEFAULT_BRIGHTNESS_THRESHOLD;
-
-        ALERT_NO_IMAGE_LOADED = "Click to open an Image!";
-        ALERT_NO_COLORS_SELECTED = "No Colors Selected!";
-        ALERT_NO_NODE_SELECTED = "No Leaf Selected!";
-        CONFIRMATION_QUIT_APPLICATION = "Are you sure you want to Quit? Unsaved changes will be lost!";
 
         nodeTooltip = new Tooltip();
         nodeTooltip.setAutoHide(true);
 
-        nodeContextMenu = new ContextMenu();
-        addToColorPickerMenuItem = new MenuItem("Add to Color Picker");
-        nodeContextMenu.getItems().add(addToColorPickerMenuItem);
-
-        NODE_SIZE_VALUE_FACTORY = new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100, minNodeSize);
+        nodeContextMenu = new ContextMenu(addToColorPickerMenuItem = new MenuItem("Add to Color Picker"));
     }
 
     // -------------------------------------------------------------------------
@@ -187,6 +171,7 @@ public class IdentificationSystemController implements Initializable {
 
         // initialize the image view with the display image
         displayedImage = new WritableImage(originalColorImage.getPixelReader(), containerWidth, containerHeight);
+
         imageView.setImage(displayedImage);
 
         // initialize the node controller with the container width and height
@@ -404,6 +389,9 @@ public class IdentificationSystemController implements Initializable {
             nodeController.clearNodes();
         }
 
+        // clear the node selection
+        clearNodeSelection();
+
         // clear node bounds
         if (nodeBoundsController != null && nodeBoundsController.HasBounds()) {
             nodeBoundsController.clearBounds();
@@ -601,9 +589,7 @@ public class IdentificationSystemController implements Initializable {
 
     private void onNodeSizeValueChanged(ObservableValue<?> value, Number oldValue, Number newValue) {
         NODE_SIZE_VALUE_FACTORY.setValue(newValue.intValue());
-        minNodeSize = NODE_SIZE_VALUE_FACTORY.getValue();
-
-        setStatusBar("Minimum Node Size: " + minNodeSize, true);
+        currentNodeSize = NODE_SIZE_VALUE_FACTORY.getValue();
     }
 
     protected void onBorderPaneMouseClicked(MouseEvent event) {
@@ -732,7 +718,7 @@ public class IdentificationSystemController implements Initializable {
 
         // create clusters from the black and white image
         if (!nodeController.hasNodes() && hasColorsSelected()) {
-            nodeController.createNodes(containerWidth, containerHeight, minNodeSize, reader, Color.BLACK);
+            nodeController.createNodes(containerWidth, containerHeight, currentNodeSize, reader, Color.BLACK);
         }
 
         // create a new black and white image with the processed pixels
@@ -816,8 +802,8 @@ public class IdentificationSystemController implements Initializable {
         saturationThreshold = DEFAULT_SATURATION_THRESHOLD;
         brightnessThreshold = DEFAULT_BRIGHTNESS_THRESHOLD;
 
-        minNodeSize = DEFAULT_MIN_NODE_SIZE;
-        NODE_SIZE_VALUE_FACTORY.setValue(minNodeSize);
+        currentNodeSize = MIN_NODE_SIZE;
+        NODE_SIZE_VALUE_FACTORY.setValue(currentNodeSize);
 
         saturationSlider.setValue(saturationThreshold);
         brightnessSlider.setValue(brightnessThreshold);
