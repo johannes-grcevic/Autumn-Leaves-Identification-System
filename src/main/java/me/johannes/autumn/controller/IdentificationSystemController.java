@@ -549,7 +549,9 @@ public class IdentificationSystemController implements Initializable {
                     clearNodeSelection();
                 }
 
-                setStatusBar("Invalid Selection: " + ALERT_NO_COLORS_SELECTED, true);
+                if (!hasColorsSelected()) {
+                    setStatusBar("Invalid Selection: " + ALERT_NO_COLORS_SELECTED, true);
+                }
             }
             else
             {
@@ -595,14 +597,20 @@ public class IdentificationSystemController implements Initializable {
     }
 
     protected void onBorderPaneMouseClicked(MouseEvent event) {
-        if (!isImageLoaded() || (selectedNode == null && selectedNodeBoundary == null)) return;
+        if (!isImageLoaded()) return;
 
         // Convert scene coordinates to ImageView's local coordinates
         Point2D localClickedPosition = imageView.sceneToLocal(event.getSceneX(), event.getSceneY());
         boolean isImageViewClicked = imageView.contains(localClickedPosition);
 
         if (event.getButton() == MouseButton.PRIMARY && !isImageViewClicked) {
-            clearNodeSelection();
+            if (selectedNode != null && selectedNodeBoundary != null) {
+                clearNodeSelection();
+            }
+
+            if (!hasColorsSelected()) {
+                setStatusBar("File: " + imageFile.getName(), true);
+            }
         }
     }
 
