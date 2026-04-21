@@ -94,7 +94,7 @@ public class IdentificationSystemController implements Initializable {
     public final Color DEFAULT_STATUS_COLOR = Color.BLACK;
     public final double DEFAULT_SATURATION_THRESHOLD = 0.3;
     public final double DEFAULT_BRIGHTNESS_THRESHOLD = 0.2;
-    public final int MIN_NODE_SIZE = 55;
+    public final int DEFAULT_NODE_SIZE = 55;
     public final int MAX_NODE_SIZE = 100;
 
     public final Color SELECTED_NODE_COLOR = Color.RED;
@@ -106,14 +106,14 @@ public class IdentificationSystemController implements Initializable {
     public final double HUE_TOLERANCE = 5.0;
 
     public final String ALERT_NO_IMAGE_LOADED = "Click to open an Image";
-    public final String ALERT_NO_COLORS_SELECTED = "No Colors Selected!";
+    public final String ALERT_NO_COLORS_SELECTED = "No Selection in Color Picker!";
     public final String ALERT_NO_NODE_SELECTED = "No Leaf Selected!";
     public final String CONFIRMATION_QUIT_APPLICATION = "Are you sure you want to Quit? Unsaved changes will be lost!";
 
     public IdentificationSystemController() {
         // the minimum size for a leaf node to be considered valid
-        currentNodeSize = MIN_NODE_SIZE;
-        NODE_SIZE_VALUE_FACTORY = new SpinnerValueFactory.IntegerSpinnerValueFactory(MIN_NODE_SIZE, MAX_NODE_SIZE, MIN_NODE_SIZE);
+        currentNodeSize = DEFAULT_NODE_SIZE;
+        NODE_SIZE_VALUE_FACTORY = new SpinnerValueFactory.IntegerSpinnerValueFactory(0, MAX_NODE_SIZE, DEFAULT_NODE_SIZE);
 
         // autumn color palette for automatic color selection
         AUTUMN_COLOR_PALETTE = List.of(
@@ -287,9 +287,9 @@ public class IdentificationSystemController implements Initializable {
         durationDialog.getDialogPane().getStylesheets().add(Objects.requireNonNull(App.getStylesheet("style")));
         durationDialog.getEditor().getStylesheets().add(Objects.requireNonNull(App.getStylesheet("style")));
 
-        durationDialog.setTitle("Animation Duration");
-        durationDialog.setHeaderText("Set the duration of the animation in seconds.");
-        durationDialog.setContentText("Enter Duration in seconds: ");
+        durationDialog.setTitle("TSP Animation");
+        durationDialog.setHeaderText("Set Animation Duration");
+        durationDialog.setContentText("Enter Duration in Seconds: ");
 
         double duration = 0;
 
@@ -548,6 +548,8 @@ public class IdentificationSystemController implements Initializable {
                 if (selectedNode != null && selectedNodeBoundary != null) {
                     clearNodeSelection();
                 }
+
+                setStatusBar("Invalid Selection: " + ALERT_NO_COLORS_SELECTED, true);
             }
             else
             {
@@ -802,7 +804,7 @@ public class IdentificationSystemController implements Initializable {
         saturationThreshold = DEFAULT_SATURATION_THRESHOLD;
         brightnessThreshold = DEFAULT_BRIGHTNESS_THRESHOLD;
 
-        currentNodeSize = MIN_NODE_SIZE;
+        currentNodeSize = DEFAULT_NODE_SIZE;
         NODE_SIZE_VALUE_FACTORY.setValue(currentNodeSize);
 
         saturationSlider.setValue(saturationThreshold);
